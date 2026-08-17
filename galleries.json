@@ -5,7 +5,9 @@
     "copyrightHolder": "Luciano Amoretti",
     "defaultAuthor": "",
     "defaultLicense": "Todos os direitos reservados",
-    "defaultYear": "2026"
+    "defaultYear": "2026",
+    "repo": "lucianoamoretti/photos",
+    "branch": "main"
   },
-  "photos": []
+  "galleries": []
 }

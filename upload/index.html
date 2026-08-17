@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<meta name="robots" content="noindex">
+<title>Enviar fotos</title>
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="../assets/css/upload.css">
+</head>
+<body class="page-upload">
+
+<header class="site-header">
+  <a class="back-link" href="../index.html">&#8249; Todas as galerias</a>
+  <h1 class="site-title">Enviar fotos</h1>
+  <p class="site-subtitle">As fotos vão direto para o repositório e o site se atualiza sozinho.</p>
+</header>
+
+<main class="wrap">
+
+  <!-- 1. Conexão -->
+  <section class="card" id="cardAuth">
+    <div class="card-head">
+      <h2>1. Conexão com o GitHub</h2>
+      <span class="pill pill--off" id="authPill">Desconectado</span>
+    </div>
+
+    <div id="authForm">
+      <p class="hint">
+        Cole um <strong>token fine-grained</strong> com permissão <em>Contents: Read and write</em>
+        apenas no repositório <code id="repoName">lucianoamoretti/photos</code>.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar token</a>.
+        Ele fica salvo só neste navegador (localStorage) e nunca é enviado para outro lugar além da API do GitHub.
+      </p>
+      <div class="row">
+        <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off"
+               spellcheck="false" aria-label="Token do GitHub">
+        <button class="btn btn--primary" id="btnConnect" type="button">Conectar</button>
+      </div>
+    </div>
+
+    <div id="authDone" hidden>
+      <p class="hint" id="authWho"></p>
+      <button class="btn btn--ghost" id="btnForget" type="button">Esquecer token deste navegador</button>
+    </div>
+  </section>
+
+  <!-- 2. Galeria -->
+  <section class="card" id="cardGallery" hidden>
+    <div class="card-head"><h2>2. Galeria</h2></div>
+
+    <label class="label" for="gallerySelect">Enviar para</label>
+    <select id="gallerySelect" class="input">
+      <option value="__new__">➕ Nova galeria</option>
+    </select>
+
+    <div id="newGalleryFields">
+      <label class="label" for="galleryName">Nome da galeria</label>
+      <input type="text" id="galleryName" class="input" placeholder="Ex.: Praia de Dublin 2026" maxlength="80">
+      <p class="hint hint--tight">Pasta: <code id="gallerySlugPreview">images/…</code></p>
+
+      <label class="label" for="galleryDesc">Descrição <span class="opt">(opcional)</span></label>
+      <input type="text" id="galleryDesc" class="input" placeholder="Uma linha sobre a galeria" maxlength="140">
+    </div>
+  </section>
+
+  <!-- 3. Créditos -->
+  <section class="card" id="cardCredits" hidden>
+    <div class="card-head"><h2>3. Créditos padrão</h2></div>
+    <p class="hint">Aplicados a todas as fotos deste envio. Dá para trocar o autor foto a foto abaixo.</p>
+
+    <div class="grid-2">
+      <div>
+        <label class="label" for="defAuthor">Autor da foto</label>
+        <input type="text" id="defAuthor" class="input" placeholder="Nome do fotógrafo">
+      </div>
+      <div>
+        <label class="label" for="defYear">Ano</label>
+        <input type="text" id="defYear" class="input" inputmode="numeric" maxlength="4">
+      </div>
+    </div>
+
+    <label class="label" for="defLicense">Licença</label>
+    <select id="defLicense" class="input">
+      <option>Todos os direitos reservados</option>
+      <option>CC BY 4.0</option>
+      <option>CC BY-NC 4.0</option>
+      <option>CC BY-SA 4.0</option>
+      <option>Domínio público (CC0)</option>
+    </select>
+
+    <label class="label" for="defLocation">Local <span class="opt">(opcional)</span></label>
+    <input type="text" id="defLocation" class="input" placeholder="Ex.: Dublin, Irlanda">
+  </section>
+
+  <!-- 4. Fotos -->
+  <section class="card" id="cardFiles" hidden>
+    <div class="card-head">
+      <h2>4. Fotos</h2>
+      <span class="pill" id="filesPill" hidden>0</span>
+    </div>
+
+    <label class="dropzone" id="dropzone" for="fileInput">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 20h16"/></svg>
+      <span class="dz-title">Escolher fotos</span>
+      <span class="dz-sub">ou arraste os arquivos aqui</span>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" id="resizeToggle" checked>
+      <span>Redimensionar para no máximo <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px e converter em JPEG (recomendado para celular)</span>
+    </label>
+
+    <ul class="filelist" id="fileList"></ul>
+  </section>
+
+  <!-- 5. Publicar -->
+  <section class="card" id="cardPublish" hidden>
+    <div class="card-head"><h2>5. Publicar</h2></div>
+
+    <button class="btn btn--primary btn--big" id="btnPublish" type="button" disabled>Publicar fotos</button>
+
+    <div class="progress" id="progressWrap" hidden>
+      <div class="progress-bar"><span id="progressBar"></span></div>
+      <p class="progress-text" id="progressText"></p>
+    </div>
+
+    <pre class="log" id="log" hidden></pre>
+
+    <div class="done" id="doneBox" hidden>
+      <p id="doneText"></p>
+      <a class="btn btn--primary" id="doneLink" href="#">Ver galeria</a>
+      <button class="btn btn--ghost" id="btnAnother" type="button">Enviar mais fotos</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p class="footer-note">Depois de publicar, o GitHub Pages leva cerca de um minuto para atualizar o site.</p>
+</footer>
+
+<script src="../assets/js/upload.js"></script>
+</body>
+</html>

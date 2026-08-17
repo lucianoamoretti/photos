@@ -1,5 +1,6 @@
 /* ---------------------------------------------------------
-   Galeria — carrega photos.json, monta o grid e o lightbox
+   Galeria — carrega uma galeria de galleries.json (?g=<id>),
+   monta o grid e o lightbox
    --------------------------------------------------------- */
 (function () {
   'use strict';
@@ -7,8 +8,8 @@
   var els = {
     gallery:   document.getElementById('gallery'),
     empty:     document.getElementById('emptyState'),
-    title:     document.getElementById('siteTitle'),
-    subtitle:  document.getElementById('siteSubtitle'),
+    name:      document.getElementById('galleryName'),
+    desc:      document.getElementById('galleryDesc'),
     footer:    document.getElementById('footerCopy'),
     lightbox:  document.getElementById('lightbox'),
     lbImage:   document.getElementById('lbImage'),
@@ -29,34 +30,41 @@
 
   // ---------- Carregamento ----------
 
-  fetch('photos.json?v=' + Date.now())
+  var wantedId = new URLSearchParams(location.search).get('g');
+
+  fetch('galleries.json?v=' + Date.now())
     .then(function (r) {
-      if (!r.ok) throw new Error('photos.json não encontrado');
+      if (!r.ok) throw new Error('galleries.json não encontrado');
       return r.json();
     })
     .then(function (data) {
       site = data.site || {};
-      photos = (data.photos || []).filter(function (p) { return p && p.file; });
-      applySite();
+      var galleries = (data.galleries || []).filter(function (g) { return g && g.id; });
+
+      var gallery = wantedId
+        ? galleries.filter(function (g) { return g.id === wantedId; })[0]
+        : galleries[0];
+
+      els.footer.textContent = '© ' + new Date().getFullYear() + ' ' +
+        (site.copyrightHolder || site.title || 'Galeria') + '. Todos os direitos reservados.';
+
+      if (!gallery) {
+        els.empty.hidden = false;
+        return;
+      }
+
+      var name = gallery.name || gallery.id;
+      els.name.textContent = name;
+      document.title = name + ' — ' + (site.title || 'Galeria');
+      if (gallery.description) els.desc.textContent = gallery.description;
+
+      photos = (gallery.photos || []).filter(function (p) { return p && p.file; });
       render();
     })
     .catch(function (err) {
       console.error(err);
       els.empty.hidden = false;
     });
-
-  function applySite() {
-    if (site.title) {
-      els.title.textContent = site.title;
-      document.title = site.title;
-    }
-    if (site.subtitle) els.subtitle.textContent = site.subtitle;
-
-    var year = new Date().getFullYear();
-    els.footer.textContent = '© ' + year + ' ' +
-      (site.copyrightHolder || site.title || 'Galeria') +
-      '. Todos os direitos reservados.';
-  }
 
   // ---------- Grid ----------
 
@@ -175,10 +183,9 @@
     els.lbCredit.textContent = credit;
     els.lbCredit.hidden = !credit;
 
-    var lic = licenseOf(photo);
     var extra = [];
     if (photo.location) extra.push(photo.location);
-    extra.push(lic);
+    extra.push(licenseOf(photo));
     els.lbLicense.textContent = extra.join(' · ');
 
     els.lbDl.href = photo.file;

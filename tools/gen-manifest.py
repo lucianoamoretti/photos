@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""Varre images/ e atualiza photos.json.
+"""Varre images/<galeria>/ e atualiza galleries.json.
 
-- Fotos novas entram no fim da lista com metadados em branco.
-- Metadados já preenchidos (title, author, year, license, location, alt) são preservados.
-- Entradas cujo arquivo sumiu de images/ são removidas.
+Serve para quando você copia fotos direto na pasta, em vez de usar a página
+de upload (/upload/). O que já está preenchido no manifesto é preservado.
+
+- Cada subpasta de images/ vira uma galeria.
+- Fotos novas entram no fim da galeria com metadados em branco.
+- Entradas cujo arquivo sumiu do disco são removidas.
+- Galerias que ficaram sem foto alguma são removidas do manifesto.
 
 Uso:  python3 tools/gen-manifest.py
 """
@@ -15,7 +19,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMAGES_DIR = os.path.join(ROOT, "images")
-MANIFEST = os.path.join(ROOT, "photos.json")
+MANIFEST = os.path.join(ROOT, "galleries.json")
 
 EXTS = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"}
 
@@ -25,60 +29,96 @@ def natural_key(name):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", name)]
 
 
-def pretty_title(filename):
-    stem = os.path.splitext(filename)[0]
+def pretty(name):
+    stem = os.path.splitext(name)[0]
     stem = re.sub(r"[_-]+", " ", stem).strip()
-    return stem[:1].upper() + stem[1:] if stem else filename
+    return stem[:1].upper() + stem[1:] if stem else name
+
+
+def list_images(folder):
+    return sorted(
+        (f for f in os.listdir(folder)
+         if os.path.splitext(f)[1].lower() in EXTS and not f.startswith(".")),
+        key=natural_key,
+    )
 
 
 def main():
     if not os.path.isdir(IMAGES_DIR):
         os.makedirs(IMAGES_DIR)
-        print("Criei images/ — coloque as fotos lá e rode de novo.")
+        print("Criei images/ — crie uma subpasta por galeria e rode de novo.")
         return 0
-
-    files = sorted(
-        (f for f in os.listdir(IMAGES_DIR)
-         if os.path.splitext(f)[1].lower() in EXTS and not f.startswith(".")),
-        key=natural_key,
-    )
 
     with open(MANIFEST, encoding="utf-8") as fh:
         data = json.load(fh)
 
     site = data.get("site", {})
-    existing = {p["file"]: p for p in data.get("photos", []) if p.get("file")}
+    known = {g["id"]: g for g in data.get("galleries", []) if g.get("id")}
 
-    photos = []
-    for name in files:
-        path = "images/" + name
-        if path in existing:
-            photos.append(existing[path])
-        else:
-            photos.append({
-                "file": path,
-                "title": pretty_title(name),
-                "author": "",
-                "year": site.get("defaultYear", ""),
-                "license": "",
-                "location": "",
-                "alt": "",
-            })
+    folders = sorted(
+        (d for d in os.listdir(IMAGES_DIR)
+         if os.path.isdir(os.path.join(IMAGES_DIR, d)) and not d.startswith(".")),
+        key=natural_key,
+    )
 
-    removed = [p for p in existing if p not in {x["file"] for x in photos}]
+    galleries, added, removed = [], 0, 0
+
+    for folder in folders:
+        files = list_images(os.path.join(IMAGES_DIR, folder))
+        if not files:
+            continue
+
+        gallery = known.get(folder, {
+            "id": folder,
+            "name": pretty(folder),
+            "description": "",
+            "createdAt": "",
+            "cover": "",
+            "photos": [],
+        })
+
+        existing = {p["file"]: p for p in gallery.get("photos", []) if p.get("file")}
+        photos = []
+
+        for name in files:
+            path = f"images/{folder}/{name}"
+            if path in existing:
+                photos.append(existing[path])
+            else:
+                photos.append({
+                    "file": path,
+                    "title": pretty(name),
+                    "author": "",
+                    "year": site.get("defaultYear", ""),
+                    "license": "",
+                    "location": "",
+                    "alt": "",
+                })
+                added += 1
+
+        removed += len(existing) - sum(1 for p in photos if p["file"] in existing)
+
+        gallery["photos"] = photos
+        if not gallery.get("cover") or gallery["cover"] not in {p["file"] for p in photos}:
+            gallery["cover"] = photos[0]["file"]
+        galleries.append(gallery)
+
+    dropped = [gid for gid in known if gid not in {g["id"] for g in galleries}]
 
     data["site"] = site
-    data["photos"] = photos
+    data["galleries"] = galleries
 
     with open(MANIFEST, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
 
-    added = len(photos) - (len(existing) - len(removed))
-    print(f"photos.json atualizado: {len(photos)} fotos "
-          f"(+{added} nova(s), -{len(removed)} removida(s))")
+    total = sum(len(g["photos"]) for g in galleries)
+    print(f"galleries.json atualizado: {len(galleries)} galeria(s), {total} foto(s) "
+          f"(+{added} nova(s), -{removed} removida(s))")
+    for gid in dropped:
+        print(f"  galeria removida do manifesto (pasta vazia ou ausente): {gid}")
     if added:
-        print("Preencha 'author' e 'title' das novas entradas em photos.json.")
+        print("Preencha 'author' e 'title' das novas entradas em galleries.json.")
     return 0
 
 

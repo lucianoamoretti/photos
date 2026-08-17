@@ -14,6 +14,9 @@
 
 * { box-sizing: border-box; }
 
+/* Um elemento com [hidden] fica escondido mesmo que a classe defina display */
+[hidden] { display: none !important; }
+
 html {
   -webkit-text-size-adjust: 100%;
 }
@@ -49,6 +52,89 @@ body.no-scroll { overflow: hidden; }
   color: var(--muted);
   font-size: .9rem;
   letter-spacing: .08em;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: .78rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.back-link:hover { color: var(--fg); }
+
+/* ---------- Home: lista de galerias ---------- */
+
+.albums {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 26px;
+  padding: 0 22px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.album {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.album-frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #1a1a1a;
+  border-radius: 3px;
+}
+
+.album-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease;
+}
+
+.album-frame--empty::after {
+  content: 'sem fotos';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: .78rem;
+  letter-spacing: .1em;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .album:hover .album-frame img { transform: scale(1.05); }
+}
+
+.album-info { padding: 14px 2px 0; }
+
+.album-name {
+  margin: 0;
+  font-size: .95rem;
+  font-weight: 400;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.album-meta {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+@media (max-width: 720px) {
+  .albums { grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 12px 12px; }
+  .album-name { font-size: .78rem; letter-spacing: .1em; }
+  .album-meta { font-size: .7rem; }
 }
 
 /* ---------- Grid fluido ---------- */
@@ -209,6 +295,22 @@ body.no-scroll { overflow: hidden; }
   opacity: .75;
   font-size: .74rem;
 }
+
+.footer-links { margin: 18px 0 0; }
+
+.footer-links a {
+  color: var(--muted);
+  font-size: .74rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+}
+
+.footer-links a:hover { color: var(--fg); }
+
+.empty-state a { color: #fff; }
 
 /* ---------- Lightbox ---------- */
 
