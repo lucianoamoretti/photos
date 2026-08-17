@@ -1,0 +1,378 @@
+/* ---------------------------------------------------------
+   Galeria fluida — cores originais, otimizada para celular
+   --------------------------------------------------------- */
+
+:root {
+  --bg: #101010;
+  --fg: #f2f2f2;
+  --muted: #9a9a9a;
+  --line: rgba(255, 255, 255, .12);
+  --accent: #ffffff;
+  --cols: 4;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body.no-scroll { overflow: hidden; }
+
+/* ---------- Cabeçalho ---------- */
+
+.site-header {
+  padding: 44px 20px 28px;
+  text-align: center;
+}
+
+.site-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 300;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+.site-subtitle {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: .9rem;
+  letter-spacing: .08em;
+}
+
+/* ---------- Grid fluido ---------- */
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 0;
+}
+
+.tile {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s ease, filter .35s ease;
+}
+
+.tile-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  text-align: center;
+  background: linear-gradient(to top, rgba(0, 0, 0, .55), rgba(0, 0, 0, .12) 55%, rgba(0, 0, 0, .35));
+  opacity: 0;
+  transition: opacity .35s ease;
+}
+
+.tile-caption {
+  font-size: clamp(.85rem, 2.1vw, 1.35rem);
+  font-weight: 300;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, .6);
+  line-height: 1.35;
+}
+
+.tile-author {
+  display: block;
+  margin-top: 8px;
+  font-size: .68rem;
+  letter-spacing: .1em;
+  color: rgba(255, 255, 255, .82);
+  text-transform: none;
+}
+
+/* Botão de download direto no card */
+.tile-dl {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .3s ease, transform .3s ease, background .2s ease;
+  z-index: 2;
+}
+
+.tile-dl svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tile-dl:hover { background: rgba(0, 0, 0, .8); }
+
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover img { transform: scale(1.07); }
+  .tile:hover .tile-overlay { opacity: 1; }
+  .tile:hover .tile-dl,
+  .tile:focus-visible .tile-dl { opacity: 1; transform: translateY(0); }
+}
+
+.tile:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+
+/* Em telas de toque (ou estreitas), legenda e download ficam sempre visíveis */
+@media (hover: none), (max-width: 720px) {
+  .tile-overlay {
+    opacity: 1;
+    align-items: flex-end;
+    background: linear-gradient(to top, rgba(0, 0, 0, .68) 0%, rgba(0, 0, 0, .1) 55%, transparent 100%);
+  }
+  .tile-dl { opacity: 1; transform: none; }
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 1100px) { :root { --cols: 3; } }
+
+@media (max-width: 720px) {
+  :root { --cols: 2; }
+  .site-header { padding: 30px 16px 20px; }
+  .tile-caption { font-size: .82rem; letter-spacing: .1em; }
+  .tile-dl { width: 34px; height: 34px; top: 8px; right: 8px; }
+  .tile-dl svg { width: 16px; height: 16px; }
+}
+@media (max-width: 380px)  { .tile-author { display: none; } }
+
+/* ---------- Estado vazio / rodapé ---------- */
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--muted);
+  line-height: 1.9;
+}
+
+.empty-state code {
+  background: rgba(255, 255, 255, .08);
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: .85em;
+}
+
+.site-footer {
+  padding: 40px 20px calc(40px + var(--safe-b));
+  text-align: center;
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.7;
+  border-top: 1px solid var(--line);
+  margin-top: 40px;
+}
+
+.footer-note {
+  max-width: 560px;
+  margin: 8px auto 0;
+  opacity: .75;
+  font-size: .74rem;
+}
+
+/* ---------- Lightbox ---------- */
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(8, 8, 8, .97);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: calc(16px + var(--safe-b));
+  animation: fade .22s ease;
+  overscroll-behavior: contain;
+}
+
+.lightbox[hidden] { display: none; }
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.lb-figure {
+  margin: 0;
+  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lb-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.lb-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+
+.lb-stage img.loaded { opacity: 1; }
+
+.lb-spinner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 2px solid rgba(255, 255, 255, .2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+.lb-spinner[hidden] { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.lb-info {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.lb-meta { min-width: 0; }
+
+.lb-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.lb-credit {
+  margin: 6px 0 0;
+  font-size: .84rem;
+  color: #d8d8d8;
+}
+
+.lb-license {
+  margin: 3px 0 0;
+  font-size: .74rem;
+  color: var(--muted);
+}
+
+.lb-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 20px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 999px;
+  color: #fff;
+  text-decoration: none;
+  font-size: .82rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background .2s ease, border-color .2s ease;
+}
+
+.lb-download:hover,
+.lb-download:focus-visible {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+}
+
+.lb-download svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lb-btn {
+  position: absolute;
+  z-index: 3;
+  background: rgba(255, 255, 255, .07);
+  border: 0;
+  color: #fff;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lb-btn:hover { background: rgba(255, 255, 255, .18); }
+
+.lb-close { top: 14px; right: 14px; font-size: 2rem; }
+.lb-prev  { left: 12px;  top: 50%; transform: translateY(-50%); }
+.lb-next  { right: 12px; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 720px) {
+  /* Centraliza as setas na área da imagem, acima do bloco de créditos */
+  .lb-prev, .lb-next { top: 40%; width: 42px; height: 42px; }
+  .lb-close { top: 10px; right: 10px; }
+  .lb-info { flex-direction: column; align-items: stretch; gap: 12px; }
+  .lb-download { justify-content: center; padding: 13px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

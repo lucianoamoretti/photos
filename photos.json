@@ -1,0 +1,11 @@
+{
+  "site": {
+    "title": "Galeria",
+    "subtitle": "Fotografias",
+    "copyrightHolder": "Luciano Amoretti",
+    "defaultAuthor": "",
+    "defaultLicense": "Todos os direitos reservados",
+    "defaultYear": "2026"
+  },
+  "photos": []
+}
