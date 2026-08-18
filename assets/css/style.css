@@ -317,6 +317,7 @@ body.no-scroll { overflow: hidden; }
 .lightbox {
   position: fixed;
   inset: 0;
+  height: 100%;
   z-index: 100;
   background: rgba(8, 8, 8, .97);
   display: flex;
@@ -326,6 +327,11 @@ body.no-scroll { overflow: hidden; }
   padding-bottom: calc(16px + var(--safe-b));
   animation: fade .22s ease;
   overscroll-behavior: contain;
+}
+
+/* Altura dinâmica: no iOS a barra do Safari escondia o rodapé com o botão de download */
+@supports (height: 100dvh) {
+  .lightbox { height: 100dvh; }
 }
 
 .lightbox[hidden] { display: none; }
@@ -346,13 +352,17 @@ body.no-scroll { overflow: hidden; }
   position: relative;
   flex: 1;
   min-height: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .lb-stage img {
   max-width: 100%;
   max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 3px;
   opacity: 0;
@@ -376,6 +386,7 @@ body.no-scroll { overflow: hidden; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .lb-info {
+  flex: none;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -465,11 +476,24 @@ body.no-scroll { overflow: hidden; }
 .lb-next  { right: 12px; top: 50%; transform: translateY(-50%); }
 
 @media (max-width: 720px) {
+  .lightbox { padding: 10px; padding-bottom: calc(10px + var(--safe-b)); }
+
   /* Centraliza as setas na área da imagem, acima do bloco de créditos */
-  .lb-prev, .lb-next { top: 40%; width: 42px; height: 42px; }
+  .lb-prev, .lb-next { top: 38%; width: 42px; height: 42px; }
   .lb-close { top: 10px; right: 10px; }
-  .lb-info { flex-direction: column; align-items: stretch; gap: 12px; }
-  .lb-download { justify-content: center; padding: 13px 20px; }
+
+  /* Barra fixa embaixo, para o botão de baixar nunca sumir */
+  .lb-info {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    border-top: 0;
+    border-radius: 12px;
+    background: rgba(18, 18, 18, .94);
+  }
+
+  .lb-download { justify-content: center; padding: 14px 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

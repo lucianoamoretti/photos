@@ -15,6 +15,8 @@
     branch: 'main',
     data: null,
     items: [],
+    bulk: null,      // {base, width, next} — nome em lote com numeração
+    cover: null,     // {kind:'existing', file} | {kind:'new', itemId}
     busy: false
   };
 
@@ -29,7 +31,11 @@
     gallerySelect: $('gallerySelect'), newFields: $('newGalleryFields'),
     galleryName: $('galleryName'), galleryDesc: $('galleryDesc'), slugPreview: $('gallerySlugPreview'),
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'), defLocation: $('defLocation'),
+    coverPicker: $('coverPicker'), coverStrip: $('coverStrip'),
     dropzone: $('dropzone'), fileInput: $('fileInput'), fileList: $('fileList'), filesPill: $('filesPill'),
+    bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
+    bulkPreview: $('bulkPreview'), starHint: $('starHint'),
+    orderSelect: $('orderSelect'), orderHint: $('orderHint'),
     resizeToggle: $('resizeToggle'), maxSize: $('maxSize'),
     btnPublish: $('btnPublish'), progressWrap: $('progressWrap'), progressBar: $('progressBar'),
     progressText: $('progressText'), log: $('log'),
@@ -76,6 +82,12 @@
     var d = new Date();
     var pad = function (n) { return (n < 10 ? '0' : '') + n; };
     return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function shortDate(ts) {
+    var d = new Date(ts);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
   function humanSize(bytes) {
@@ -208,11 +220,14 @@
 
     fillGallerySelect();
     updateSlugPreview();
+    renderCoverStrip();
+    updateBulkPreview();
     refreshPublishState();
   }
 
   function fillGallerySelect() {
     var sel = el.gallerySelect;
+    var prev = sel.value;
     sel.innerHTML = '';
 
     var optNew = document.createElement('option');
@@ -226,6 +241,10 @@
       o.textContent = (g.name || g.id) + ' (' + ((g.photos || []).length) + ')';
       sel.appendChild(o);
     });
+
+    sel.value = prev;
+    if (!sel.value) sel.value = '__new__';
+    el.newFields.hidden = sel.value !== '__new__';
   }
 
   // ---------- Galeria ----------
@@ -233,8 +252,136 @@
   el.gallerySelect.addEventListener('change', function () {
     var isNew = el.gallerySelect.value === '__new__';
     el.newFields.hidden = !isNew;
+    state.cover = null;
+
+    // Numeração em lote continua de onde a galeria parou
+    var g = selectedGallery();
+    el.bulkStart.value = g ? ((g.photos || []).length + 1) : 1;
+
+    renderCoverStrip();
+    updateBulkPreview();
     refreshPublishState();
   });
+
+  function selectedGallery() {
+    if (el.gallerySelect.value === '__new__') return null;
+    return (state.data.galleries || []).filter(function (g) {
+      return g.id === el.gallerySelect.value;
+    })[0] || null;
+  }
+
+  // ---------- Miniatura (capa) da galeria ----------
+
+  function renderCoverStrip() {
+    var gallery = selectedGallery();
+    var photos = gallery ? (gallery.photos || []) : [];
+
+    el.coverPicker.hidden = photos.length === 0;
+    el.coverStrip.innerHTML = '';
+    if (!photos.length) return;
+
+    photos.forEach(function (p) {
+      var chosen = state.cover
+        ? (state.cover.kind === 'existing' && state.cover.file === p.file)
+        : (gallery.cover === p.file);
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'coverthumb' + (chosen ? ' coverthumb--on' : '');
+      btn.title = p.title || '';
+      btn.setAttribute('aria-pressed', chosen ? 'true' : 'false');
+      btn.setAttribute('aria-label', 'Usar "' + (p.title || p.file) + '" como capa');
+
+      var img = document.createElement('img');
+      img.src = '../' + p.file;
+      img.alt = '';
+      img.loading = 'lazy';
+      btn.appendChild(img);
+
+      btn.addEventListener('click', function () {
+        state.cover = { kind: 'existing', file: p.file };
+        renderCoverStrip();
+        renderFiles();
+        refreshPublishState();
+      });
+
+      el.coverStrip.appendChild(btn);
+    });
+  }
+
+  function coverChanged() {
+    if (!state.cover) return false;
+    if (state.cover.kind === 'new') return true;
+    var gallery = selectedGallery();
+    return !!gallery && gallery.cover !== state.cover.file;
+  }
+
+  // ---------- Nome em lote ----------
+
+  function pad(n, width) {
+    var s = String(n);
+    while (s.length < width) s = '0' + s;
+    return s;
+  }
+
+  el.btnBulk.addEventListener('click', applyBulk);
+
+  el.bulkTitle.addEventListener('input', updateBulkPreview);
+  el.bulkStart.addEventListener('input', updateBulkPreview);
+
+  el.bulkTitle.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); applyBulk(); }
+  });
+
+  function bulkStartValue() {
+    return Math.max(1, Math.min(9999, parseInt(el.bulkStart.value, 10) || 1));
+  }
+
+  function applyBulk() {
+    var base = el.bulkTitle.value.trim();
+
+    if (!base) {
+      state.bulk = null;
+      state.items.forEach(function (it) { it.title = prettyTitle(it.file.name); });
+    } else {
+      state.bulk = { base: base, start: bulkStartValue() };
+      applyNumbering();
+    }
+
+    renderFiles();
+    updateBulkPreview();
+  }
+
+  /* Numera as fotos na ordem atual da lista — chamado ao aplicar o nome
+     e sempre que a lista muda (novas fotos, remoção, reordenação). */
+  function applyNumbering() {
+    if (!state.bulk) return;
+    var start = state.bulk.start;
+    var width = String(start + Math.max(0, state.items.length - 1)).length;
+    state.items.forEach(function (it, i) {
+      it.title = state.bulk.base + ' ' + pad(start + i, width);
+    });
+  }
+
+  function updateBulkPreview() {
+    var base = el.bulkTitle.value.trim();
+
+    if (!base) {
+      el.bulkPreview.textContent = 'Deixe vazio para usar o nome de cada arquivo.';
+      return;
+    }
+
+    var start = bulkStartValue();
+    var count = Math.max(state.items.length, 3);
+    var width = String(start + Math.max(0, state.items.length - 1)).length;
+
+    var names = [];
+    for (var i = 0; i < Math.min(3, count); i++) names.push(base + ' ' + pad(start + i, width));
+
+    el.bulkPreview.textContent = 'Fica: ' + names.join(', ') +
+      (count > 3 ? '…' : '') + ' · arquivos ' + slugify(names[0]) + '.jpg, ' +
+      slugify(names[1]) + '.jpg…';
+  }
 
   el.galleryName.addEventListener('input', function () {
     updateSlugPreview();
@@ -245,6 +392,111 @@
     var s = slugify(el.galleryName.value);
     el.slugPreview.textContent = 'images/' + (s || '…') + '/';
   }
+
+  // ---------- Data da foto (EXIF) e ordenação ----------
+
+  function readChunk(file, bytes) {
+    var blob = file.slice(0, bytes);
+    if (blob.arrayBuffer) return blob.arrayBuffer();
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(fr.result); };
+      fr.onerror = function () { reject(new Error('leitura falhou')); };
+      fr.readAsArrayBuffer(blob);
+    });
+  }
+
+  /* Lê DateTimeOriginal do EXIF. Retorna timestamp ou 0 se não achar. */
+  function readExifDate(file) {
+    return readChunk(file, 131072).then(function (buf) {
+      var view = new DataView(buf);
+      if (view.byteLength < 4 || view.getUint16(0) !== 0xFFD8) return 0; // não é JPEG
+
+      var offset = 2;
+      while (offset + 4 <= view.byteLength) {
+        var marker = view.getUint16(offset);
+        if ((marker & 0xFF00) !== 0xFF00) break;
+        var size = view.getUint16(offset + 2);
+        if (marker === 0xFFE1) return parseApp1(view, offset + 4);
+        if (marker === 0xFFDA) break; // começaram os dados da imagem
+        offset += 2 + size;
+      }
+      return 0;
+    }).catch(function () { return 0; });
+  }
+
+  function parseApp1(view, start) {
+    if (start + 14 > view.byteLength) return 0;
+    for (var i = 0; i < 4; i++) {
+      if (view.getUint8(start + i) !== 'Exif'.charCodeAt(i)) return 0;
+    }
+
+    var tiff = start + 6;
+    var order = view.getUint16(tiff);
+    if (order !== 0x4949 && order !== 0x4D4D) return 0;
+    var le = order === 0x4949;
+
+    var ifd0 = tiff + view.getUint32(tiff + 4, le);
+    var exifPtr = findTag(view, tiff, ifd0, le, 0x8769, true);
+    if (!exifPtr) return 0;
+
+    var str = findTag(view, tiff, tiff + exifPtr, le, 0x9003, false) ||
+              findTag(view, tiff, tiff + exifPtr, le, 0x9004, false);
+    return parseExifDate(str);
+  }
+
+  function findTag(view, tiff, ifd, le, wanted, asNumber) {
+    if (ifd + 2 > view.byteLength) return asNumber ? 0 : '';
+    var count = view.getUint16(ifd, le);
+
+    for (var i = 0; i < count; i++) {
+      var entry = ifd + 2 + i * 12;
+      if (entry + 12 > view.byteLength) break;
+      if (view.getUint16(entry, le) !== wanted) continue;
+
+      var num = view.getUint32(entry + 4, le);
+      if (asNumber) return view.getUint32(entry + 8, le);
+
+      var at = num > 4 ? tiff + view.getUint32(entry + 8, le) : entry + 8;
+      var out = '';
+      for (var k = 0; k < num - 1 && at + k < view.byteLength; k++) {
+        out += String.fromCharCode(view.getUint8(at + k));
+      }
+      return out;
+    }
+    return asNumber ? 0 : '';
+  }
+
+  /* "2026:08:17 21:33:04" -> timestamp */
+  function parseExifDate(s) {
+    var m = /^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(s || '');
+    if (!m) return 0;
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]).getTime();
+  }
+
+  function naturalCompare(a, b) {
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  function sortItems() {
+    var mode = el.orderSelect.value;
+
+    state.items.sort(function (a, b) {
+      if (mode === 'picked') return a.seq - b.seq;
+      if (mode === 'name-asc') return naturalCompare(a.file.name, b.file.name) || (a.seq - b.seq);
+
+      var da = a.date || 0, db = b.date || 0;
+      if (da === db) return naturalCompare(a.file.name, b.file.name) || (a.seq - b.seq);
+      return mode === 'date-desc' ? db - da : da - db;
+    });
+  }
+
+  el.orderSelect.addEventListener('change', function () {
+    sortItems();
+    applyNumbering();
+    renderFiles();
+    updateBulkPreview();
+  });
 
   // ---------- Arquivos ----------
 
@@ -272,25 +524,55 @@
   });
 
   var nextId = 1;
+  var nextSeq = 1;
 
   function addFiles(fileList) {
-    Array.prototype.slice.call(fileList).forEach(function (file) {
-      if (!/^image\//.test(file.type)) return;
-      state.items.push({
+    var files = Array.prototype.slice.call(fileList).filter(function (f) {
+      return /^image\//.test(f.type);
+    });
+    if (!files.length) return;
+
+    var added = files.map(function (file) {
+      var item = {
         id: nextId++,
+        seq: nextSeq++,
         file: file,
         title: prettyTitle(file.name),
-        author: ''
-      });
+        author: '',
+        date: file.lastModified || 0
+      };
+      state.items.push(item);
+      return item;
     });
+
+    // Mostra a lista na hora; a data do EXIF chega logo depois e reordena
     renderFiles();
     refreshPublishState();
+    el.orderHint.textContent = 'Lendo a data das fotos…';
+
+    Promise.all(added.map(function (item) {
+      return readExifDate(item.file).then(function (ts) {
+        if (ts) { item.date = ts; item.hasExif = true; }
+      });
+    })).then(function () {
+      sortItems();
+      applyNumbering();
+      renderFiles();
+      updateBulkPreview();
+      refreshPublishState();
+
+      var semExif = state.items.filter(function (it) { return !it.hasExif; }).length;
+      el.orderHint.textContent = semExif
+        ? semExif + ' foto(s) sem data no EXIF — nessas foi usada a data do arquivo.'
+        : 'Ordenadas pela data em que as fotos foram tiradas (EXIF).';
+    });
   }
 
   function renderFiles() {
     el.fileList.innerHTML = '';
     el.filesPill.hidden = state.items.length === 0;
     el.filesPill.textContent = state.items.length + (state.items.length === 1 ? ' foto' : ' fotos');
+    el.starHint.hidden = state.items.length === 0;
 
     state.items.forEach(function (item) {
       var li = document.createElement('li');
@@ -326,10 +608,28 @@
 
       var meta = document.createElement('p');
       meta.className = 'fileitem-meta';
-      meta.textContent = item.file.name + ' · ' + humanSize(item.file.size);
+      meta.textContent = item.file.name + ' · ' + humanSize(item.file.size) +
+        (item.date ? ' · ' + shortDate(item.date) : '');
       fields.appendChild(meta);
 
       li.appendChild(fields);
+
+      // Estrela: escolhe esta foto como miniatura da galeria
+      var chosen = !!state.cover && state.cover.kind === 'new' && state.cover.itemId === item.id;
+      var star = document.createElement('button');
+      star.type = 'button';
+      star.className = 'fileitem-star' + (chosen ? ' fileitem-star--on' : '');
+      star.textContent = chosen ? '★' : '☆';
+      star.title = 'Usar como miniatura da galeria';
+      star.setAttribute('aria-pressed', chosen ? 'true' : 'false');
+      star.setAttribute('aria-label', 'Usar ' + item.file.name + ' como miniatura da galeria');
+      star.addEventListener('click', function () {
+        state.cover = chosen ? null : { kind: 'new', itemId: item.id };
+        renderFiles();
+        renderCoverStrip();
+        refreshPublishState();
+      });
+      li.appendChild(star);
 
       var rm = document.createElement('button');
       rm.type = 'button';
@@ -339,7 +639,13 @@
       rm.setAttribute('aria-label', 'Remover ' + item.file.name);
       rm.addEventListener('click', function () {
         state.items = state.items.filter(function (x) { return x.id !== item.id; });
+        if (state.cover && state.cover.kind === 'new' && state.cover.itemId === item.id) {
+          state.cover = null;
+        }
+        applyNumbering();
         renderFiles();
+        renderCoverStrip();
+        updateBulkPreview();
         refreshPublishState();
       });
       li.appendChild(rm);
@@ -349,8 +655,15 @@
   }
 
   function refreshPublishState() {
-    var hasGallery = el.gallerySelect.value !== '__new__' || slugify(el.galleryName.value).length > 0;
-    el.btnPublish.disabled = state.busy || !hasGallery || state.items.length === 0;
+    var isNew = el.gallerySelect.value === '__new__';
+    var hasGallery = !isNew || slugify(el.galleryName.value).length > 0;
+    // Sem fotos novas ainda dá para publicar, se a única mudança for a capa
+    var hasWork = state.items.length > 0 || (!isNew && coverChanged());
+
+    el.btnPublish.disabled = state.busy || !hasGallery || !hasWork;
+    el.btnPublish.textContent = (state.items.length === 0 && hasWork)
+      ? 'Salvar miniatura'
+      : 'Publicar fotos';
   }
 
   // ---------- Redimensionamento ----------
@@ -400,12 +713,14 @@
 
   el.btnAnother.addEventListener('click', function () {
     state.items = [];
+    state.cover = null;
     renderFiles();
     el.doneBox.hidden = true;
     el.log.hidden = true;
     el.log.textContent = '';
     el.progressWrap.hidden = true;
     fillGallerySelect();
+    renderCoverStrip();
     refreshPublishState();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -466,6 +781,7 @@
         used[filename.toLowerCase()] = true;
 
         var path = 'images/' + gallery.id + '/' + filename;
+        item.publishedPath = path;
         log('↑ ' + path + ' (' + humanSize(out.blob.size) + ')');
 
         return blobToBase64(out.blob).then(function (b64) {
@@ -492,7 +808,16 @@
 
     chain.then(function () {
       // Atualiza o manifesto
+      var chosenCover = '';
+      if (state.cover && state.cover.kind === 'existing') {
+        chosenCover = state.cover.file;
+      } else if (state.cover && state.cover.kind === 'new') {
+        var picked = state.items.filter(function (it) { return it.id === state.cover.itemId; })[0];
+        chosenCover = picked ? picked.publishedPath : '';
+      }
+
       gallery.photos = (gallery.photos || []).concat(newPhotos);
+      if (chosenCover) gallery.cover = chosenCover;
       if (!gallery.cover && gallery.photos.length) gallery.cover = gallery.photos[0].file;
       if (isNew) state.data.galleries.push(gallery);
 
@@ -523,7 +848,9 @@
           return api('/repos/' + state.repo + '/git/commits', {
             method: 'POST',
             body: {
-              message: 'Adiciona ' + newPhotos.length + ' foto(s) em "' + gallery.name + '"',
+              message: newPhotos.length
+                ? 'Adiciona ' + newPhotos.length + ' foto(s) em "' + gallery.name + '"'
+                : 'Atualiza a miniatura de "' + gallery.name + '"',
               tree: tree.sha,
               parents: [headSha]
             }
@@ -541,14 +868,21 @@
       log('✓ Commit publicado.');
       state.busy = false;
       state.items = [];
+      state.cover = null;
       renderFiles();
       el.doneBox.hidden = false;
-      el.doneText.textContent = newPhotos.length + ' foto(s) enviada(s) para "' + gallery.name +
-        '". O site atualiza em cerca de 1 minuto.';
+      el.doneText.textContent = (newPhotos.length
+        ? newPhotos.length + ' foto(s) enviada(s) para "' + gallery.name + '"'
+        : 'Miniatura de "' + gallery.name + '" atualizada') +
+        '. O site atualiza em cerca de 1 minuto.';
       el.doneLink.href = '../gallery.html?g=' + encodeURIComponent(gallery.id);
       fillGallerySelect();
       el.gallerySelect.value = gallery.id;
       el.newFields.hidden = true;
+      el.bulkStart.value = (gallery.photos || []).length + 1;
+      renderCoverStrip();
+      updateBulkPreview();
+      refreshPublishState();
     }).catch(function (err) {
       console.error(err);
       log('✗ Erro: ' + err.message);
@@ -557,6 +891,7 @@
       state.busy = false;
       loadManifest().then(function () {
         fillGallerySelect();
+        renderCoverStrip();
         refreshPublishState();
       });
     });

@@ -111,6 +111,65 @@ select.input {
 
 .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; }
 
+.input--num { flex: none; width: 92px; text-align: center; }
+
+.row--bulk { align-items: stretch; }
+.row--bulk .btn { flex: none; }
+
+.bulkname { margin-top: 18px; }
+
+/* ---------- Escolha da miniatura ---------- */
+
+#coverPicker { margin-top: 18px; }
+
+.coverstrip {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.coverthumb {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: #0f0f0f;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: .55;
+  transition: opacity .2s ease, border-color .2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.coverthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.coverthumb:hover { opacity: .85; }
+
+.coverthumb--on {
+  border-color: #fff;
+  opacity: 1;
+}
+
+.fileitem-star {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fileitem-star:hover { background: rgba(255, 255, 255, .16); color: var(--fg); }
+.fileitem-star--on { background: rgba(255, 214, 102, .2); color: #ffd666; }
+
 .hint {
   margin: 0 0 14px;
   color: var(--muted);

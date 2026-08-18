@@ -63,6 +63,12 @@
       <label class="label" for="galleryDesc">Descrição <span class="opt">(opcional)</span></label>
       <input type="text" id="galleryDesc" class="input" placeholder="Uma linha sobre a galeria" maxlength="140">
     </div>
+
+    <div id="coverPicker" hidden>
+      <label class="label">Miniatura da galeria</label>
+      <p class="hint hint--tight">Toque em uma foto para usá-la como capa na página inicial.</p>
+      <div class="coverstrip" id="coverStrip"></div>
+    </div>
   </section>
 
   <!-- 3. Créditos -->
@@ -108,11 +114,32 @@
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
     </label>
 
+    <label class="label" for="orderSelect">Ordem das fotos na galeria</label>
+    <select id="orderSelect" class="input">
+      <option value="date-asc">Data da foto — da mais antiga para a mais nova</option>
+      <option value="date-desc">Data da foto — da mais nova para a mais antiga</option>
+      <option value="name-asc">Nome do arquivo (A → Z)</option>
+      <option value="picked">Na ordem em que escolhi</option>
+    </select>
+    <p class="hint hint--tight" id="orderHint">A data vem do EXIF da foto; sem EXIF, usa a data do arquivo.</p>
+
+    <div class="bulkname">
+      <label class="label" for="bulkTitle">Mesmo nome para todas <span class="opt">(numeradas em sequência)</span></label>
+      <div class="row row--bulk">
+        <input type="text" id="bulkTitle" class="input" placeholder="Ex.: Praia" maxlength="60">
+        <input type="number" id="bulkStart" class="input input--num" value="1" min="1" max="9999"
+               inputmode="numeric" aria-label="Número inicial">
+        <button class="btn" id="btnBulk" type="button">Aplicar</button>
+      </div>
+      <p class="hint hint--tight" id="bulkPreview">Deixe vazio para usar o nome de cada arquivo.</p>
+    </div>
+
     <label class="check">
       <input type="checkbox" id="resizeToggle" checked>
       <span>Redimensionar para no máximo <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px e converter em JPEG (recomendado para celular)</span>
     </label>
 
+    <p class="hint hint--tight" id="starHint" hidden>A estrela marca qual foto vira a miniatura da galeria.</p>
     <ul class="filelist" id="fileList"></ul>
   </section>
 
