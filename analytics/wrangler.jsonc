@@ -1,0 +1,25 @@
+{
+  // Configuração para publicar direto do repositório (Workers → Import a repository),
+  // com "Root directory" = analytics. Também serve para `npx wrangler deploy` local.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "photos-stats",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-01",
+  "observability": { "enabled": true },
+
+  // Crie o banco antes (D1 → Create → photos_stats) e cole o ID aqui.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "photos_stats",
+      "database_id": "COLE-AQUI-O-ID-DO-BANCO-D1"
+    }
+  ],
+
+  "vars": {
+    "SITE_ORIGIN": "https://lucianoamoretti.github.io"
+  }
+
+  // STATS_KEY não fica aqui: é um secret, criado no painel
+  // (Settings → Variables and Secrets → Add → Secret).
+}

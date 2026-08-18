@@ -7,6 +7,13 @@ visitante — só contadores por dia, o que dispensa banner de consentimento.
 Tudo cabe no plano gratuito com folga (100 mil requisições/dia no Worker,
 100 mil linhas escritas/dia no D1).
 
+## Atenção: Workers, não Pages
+
+No painel da Cloudflare existem duas coisas parecidas. O **Pages** é para publicar sites
+estáticos e tem aquele "Create new deployment" com upload de arquivos — se você colar o
+`worker.js` lá, aparece o erro *"This uploader does not yet support projects that require
+a build process"*. O que precisamos é o **Workers**, que roda código e tem editor online.
+
 ## Passo a passo (uma vez só, tudo pelo painel)
 
 1. **Conta**: crie uma conta grátis em [dash.cloudflare.com](https://dash.cloudflare.com).
@@ -17,10 +24,13 @@ Tudo cabe no plano gratuito com folga (100 mil requisições/dia no Worker,
    Abra o banco criado, vá em **Console** e cole o conteúdo de
    [`schema.sql`](schema.sql). Execute.
 
-3. **Worker**: menu **Compute (Workers) → Create → Start from Hello World → Deploy**.
-   Nome sugerido: `photos-stats`.
-   Depois **Edit code**, apague o exemplo, cole o conteúdo de
-   [`worker.js`](worker.js) e **Deploy**.
+3. **Worker**: menu **Workers & Pages → Create application → Workers → Start with Hello World!**
+   Dê o nome `photos-stats` e clique em **Deploy** (ele publica o exemplo).
+   Agora clique em **Edit code**, apague o exemplo, cole o conteúdo de
+   [`worker.js`](worker.js) e **Deploy** de novo.
+
+   > Se em algum momento o painel pedir para "fazer upload de arquivos" ou falar em
+   > *build process*, você está no **Pages**. Volte e escolha **Workers**.
 
 4. **Ligar o banco no Worker**: no Worker, **Settings → Bindings → Add → D1 database**.
    - *Variable name*: `DB`
@@ -43,6 +53,19 @@ Tudo cabe no plano gratuito com folga (100 mil requisições/dia no Worker,
    Enquanto esse campo estiver vazio, o site simplesmente não envia nada — nada quebra.
 
 7. Abra `/stats/` no site, cole a `STATS_KEY` e pronto.
+
+## Alternativa: publicar direto do repositório
+
+Em vez de colar o código, dá para o Worker acompanhar este repositório:
+
+1. Crie o banco D1 (passo 2 acima) e copie o **Database ID**.
+2. Cole esse ID em [`wrangler.jsonc`](wrangler.jsonc), no campo `database_id`, e faça commit.
+3. **Workers & Pages → Create application → Workers → Import a repository**,
+   escolha `lucianoamoretti/photos` e defina **Root directory** = `analytics`.
+4. Depois de publicado, adicione o secret `STATS_KEY` em **Settings → Variables and Secrets**.
+
+Assim cada push no repositório republica o Worker, e o binding do D1 já vem do
+`wrangler.jsonc` — não precisa configurar à mão.
 
 ## Conferindo
 
