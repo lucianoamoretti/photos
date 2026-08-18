@@ -136,8 +136,11 @@
 
     <label class="check">
       <input type="checkbox" id="resizeToggle" checked>
-      <span>Redimensionar para no máximo <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px e converter em JPEG (recomendado para celular)</span>
+      <span>Reduzir o arquivo do download para no máximo <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px
+      (desmarque para guardar a foto original em tamanho cheio)</span>
     </label>
+    <p class="hint hint--tight">De qualquer forma são geradas versões leves — 700 px para o grid
+    e 1800 px para a tela cheia — para a galeria abrir rápido no celular.</p>
 
     <p class="hint hint--tight" id="starHint" hidden>A estrela marca qual foto vira a miniatura da galeria.</p>
     <ul class="filelist" id="fileList"></ul>

@@ -29,6 +29,35 @@ def natural_key(name):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", name)]
 
 
+def exif_date(path):
+    """DateTimeOriginal do EXIF, em timestamp. 0 se não houver."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return 0
+    try:
+        with Image.open(path) as im:
+            raw = im.getexif().get_ifd(0x8769).get(0x9003)
+        if not raw:
+            return 0
+        import datetime
+        return datetime.datetime.strptime(raw, "%Y:%m:%d %H:%M:%S").timestamp()
+    except Exception:
+        return 0
+
+
+def photo_key(folder, name):
+    """Ordem da galeria: data da foto (mais antiga primeiro), depois nome."""
+    path = os.path.join(folder, name)
+    ts = exif_date(path)
+    if not ts:
+        try:
+            ts = os.path.getmtime(path)
+        except OSError:
+            ts = 0
+    return (ts, natural_key(name))
+
+
 def pretty(name):
     stem = os.path.splitext(name)[0]
     stem = re.sub(r"[_-]+", " ", stem).strip()
@@ -39,7 +68,7 @@ def list_images(folder):
     return sorted(
         (f for f in os.listdir(folder)
          if os.path.splitext(f)[1].lower() in EXTS and not f.startswith(".")),
-        key=natural_key,
+        key=lambda name: photo_key(folder, name),
     )
 
 

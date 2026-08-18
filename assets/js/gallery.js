@@ -175,7 +175,7 @@
     els.lbImage.classList.remove('loaded');
     els.lbSpinner.hidden = false;
     els.lbImage.alt = photo.alt || titleOf(photo, index);
-    els.lbImage.src = photo.file;
+    els.lbImage.src = photo.view || photo.file;   // versão leve para ver; o download é o original
 
     els.lbTitle.textContent = titleOf(photo, index);
 
@@ -201,7 +201,7 @@
 
   function preload(i) {
     var photo = photos[(i + photos.length) % photos.length];
-    if (photo) { var im = new Image(); im.src = photo.file; }
+    if (photo) { var im = new Image(); im.src = photo.view || photo.file; }
   }
 
   els.lbImage.addEventListener('load', function () {

@@ -9,13 +9,23 @@ autoral por foto. HTML/CSS/JS puro — sem build, sem dependências.
 ## Estrutura
 
 ```
-index.html            capa — lista as galerias
-gallery.html?g=<id>   grid de uma galeria, com lightbox
-upload/index.html     página de envio de fotos
-galleries.json        manifesto: galerias, fotos e créditos
-images/<galeria>/     arquivos das fotos, uma pasta por galeria
-tools/gen-manifest.py gerador do manifesto (para quem copia fotos na mão)
+index.html                  capa — lista as galerias
+gallery.html?g=<id>         grid de uma galeria, com lightbox
+upload/index.html           página de envio de fotos
+galleries.json              manifesto: galerias, fotos e créditos
+images/<galeria>/           foto original — é o que o botão "Baixar" entrega
+images/<galeria>/view/      1800 px — o que aparece em tela cheia
+images/<galeria>/thumbs/    700 px — o que aparece no grid e na capa
+tools/gen-manifest.py       gerador do manifesto (para quem copia fotos na mão)
+tools/make-sizes.py         gera as versões leves a partir dos originais
 ```
+
+### Três tamanhos por foto
+
+O original de uma câmera tem 5 MB ou mais; 50 deles no grid seriam 250 MB no 4G.
+Por isso cada foto tem três versões: o grid carrega a de 700 px, a tela cheia carrega
+a de 1800 px, e só o download entrega o arquivo original. A página de upload gera as
+três sozinha; se você copiar fotos na mão, rode `python3 tools/make-sizes.py`.
 
 ## Enviando fotos pela página de upload
 
@@ -46,9 +56,11 @@ Nunca comite o token no repositório.
 ## Adicionando fotos na mão
 
 1. Copie os arquivos para `images/<nome-da-galeria>/`.
-2. Rode `python3 tools/gen-manifest.py`.
-3. Preencha `title` e `author` das novas entradas em `galleries.json`.
-4. Commit e push.
+2. Rode `python3 tools/gen-manifest.py` — ordena as fotos pela data do EXIF,
+   da mais antiga para a mais nova.
+3. Rode `python3 tools/make-sizes.py` para gerar as versões leves.
+4. Preencha `title` e `author` das novas entradas em `galleries.json`.
+5. Commit e push.
 
 ## Formato do `galleries.json`
 

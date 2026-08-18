@@ -123,6 +123,15 @@
     });
   }
 
+  function putBlob(blob) {
+    return blobToBase64(blob).then(function (b64) {
+      return api('/repos/' + state.repo + '/git/blobs', {
+        method: 'POST',
+        body: { content: b64, encoding: 'base64' }
+      });
+    }).then(function (res) { return res.sha; });
+  }
+
   function log(msg) {
     el.log.hidden = false;
     el.log.textContent += msg + '\n';
@@ -674,31 +683,47 @@
       .catch(function () { return createImageBitmap(file); });
   }
 
-  function processImage(file) {
-    if (!el.resizeToggle.checked) {
-      return Promise.resolve({ blob: file, ext: extOf(file.name) });
-    }
+  var THUMB_MAX = 700;   // grid e capa
+  var VIEW_MAX = 1800;   // lightbox
 
+  function scaleTo(bmp, max, quality) {
+    var s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    var w = Math.max(1, Math.round(bmp.width * s));
+    var h = Math.max(1, Math.round(bmp.height * s));
+
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, 'image/jpeg', quality);
+    });
+  }
+
+  /* Gera as três versões de uma foto:
+     main  — o que o botão "Baixar" entrega (original, ou reduzido se a opção estiver marcada)
+     view  — 1800 px, o que aparece em tela cheia
+     thumb — 700 px, o que aparece no grid */
+  function processImage(file) {
+    var reduce = el.resizeToggle.checked;
     var max = Math.max(600, Math.min(6000, parseInt(el.maxSize.value, 10) || 2000));
+    var out = { main: { blob: file, ext: extOf(file.name) }, thumb: null, view: null };
 
     return loadBitmap(file).then(function (bmp) {
-      var scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
-      var w = Math.max(1, Math.round(bmp.width * scale));
-      var h = Math.max(1, Math.round(bmp.height * scale));
-
-      var canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
-      if (bmp.close) bmp.close();
-
-      return new Promise(function (resolve) {
-        canvas.toBlob(function (blob) {
-          resolve(blob ? { blob: blob, ext: 'jpg' } : { blob: file, ext: extOf(file.name) });
-        }, 'image/jpeg', 0.85);
+      return scaleTo(bmp, THUMB_MAX, 0.8).then(function (b) {
+        out.thumb = b;
+        return scaleTo(bmp, VIEW_MAX, 0.85);
+      }).then(function (b) {
+        out.view = b;
+        return reduce ? scaleTo(bmp, max, 0.85) : null;
+      }).then(function (b) {
+        if (b) out.main = { blob: b, ext: 'jpg' };
+        if (bmp.close) bmp.close();
+        return out;
       });
     }).catch(function () {
-      return { blob: file, ext: extOf(file.name) };
+      return out;   // navegador não conseguiu processar: sobe o arquivo como veio
     });
   }
 
@@ -775,31 +800,43 @@
         return processImage(item.file);
       }).then(function (out) {
         var base = slugify(item.title) || slugify(item.file.name.replace(/\.[^.]+$/, '')) || 'foto';
-        var filename = base + '.' + out.ext;
+        var filename = base + '.' + out.main.ext;
         var n = 2;
-        while (used[filename.toLowerCase()]) { filename = base + '-' + n + '.' + out.ext; n++; }
+        while (used[filename.toLowerCase()]) { filename = base + '-' + n + '.' + out.main.ext; n++; }
         used[filename.toLowerCase()] = true;
 
-        var path = 'images/' + gallery.id + '/' + filename;
+        var dir = 'images/' + gallery.id + '/';
+        var stem = filename.replace(/\.[^.]+$/, '');
+        var path = dir + filename;
         item.publishedPath = path;
-        log('↑ ' + path + ' (' + humanSize(out.blob.size) + ')');
 
-        return blobToBase64(out.blob).then(function (b64) {
-          return api('/repos/' + state.repo + '/git/blobs', {
-            method: 'POST',
-            body: { content: b64, encoding: 'base64' }
+        var photo = {
+          file: path,
+          title: item.title.trim() || prettyTitle(item.file.name),
+          author: item.author.trim() || defAuthor,
+          year: el.defYear.value.trim(),
+          license: el.defLicense.value,
+          location: el.defLocation.value.trim(),
+          alt: ''
+        };
+
+        log('↑ ' + path + ' (' + humanSize(out.main.blob.size) + ')');
+
+        return putBlob(out.main.blob).then(function (sha) {
+          blobs.push({ path: path, sha: sha });
+          if (!out.thumb) return null;
+          return putBlob(out.thumb).then(function (s) {
+            photo.thumb = dir + 'thumbs/' + stem + '.jpg';
+            blobs.push({ path: photo.thumb, sha: s });
           });
-        }).then(function (blob) {
-          blobs.push({ path: path, sha: blob.sha });
-          newPhotos.push({
-            file: path,
-            title: item.title.trim() || prettyTitle(item.file.name),
-            author: item.author.trim() || defAuthor,
-            year: el.defYear.value.trim(),
-            license: el.defLicense.value,
-            location: el.defLocation.value.trim(),
-            alt: ''
+        }).then(function () {
+          if (!out.view) return null;
+          return putBlob(out.view).then(function (s) {
+            photo.view = dir + 'view/' + stem + '.jpg';
+            blobs.push({ path: photo.view, sha: s });
           });
+        }).then(function () {
+          newPhotos.push(photo);
           step++;
           progress(step, total, 'Enviadas ' + step + '/' + state.items.length);
         });

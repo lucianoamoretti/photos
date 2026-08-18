@@ -47,7 +47,12 @@
 
     galleries.forEach(function (g) {
       var photos = g.photos || [];
-      var cover = g.cover || (photos[0] && (photos[0].thumb || photos[0].file));
+
+      // Usa a miniatura da foto escolhida como capa, se existir
+      var coverPhoto = g.cover
+        ? photos.filter(function (p) { return p.file === g.cover; })[0]
+        : photos[0];
+      var cover = (coverPhoto && (coverPhoto.thumb || coverPhoto.file)) || g.cover;
 
       var card = document.createElement('a');
       card.className = 'album';
