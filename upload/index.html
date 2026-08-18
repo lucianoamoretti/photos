@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>Enviar fotos</title>
+<title>Upload photos</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="page-admin">
 
 <header class="site-header">
-  <a class="back-link" href="../index.html">&#8249; Todas as galerias</a>
-  <h1 class="site-title">Enviar fotos</h1>
-  <p class="site-subtitle">As fotos vão direto para o repositório e o site se atualiza sozinho.</p>
+  <a class="back-link" href="../index.html">&#8249; All galleries</a>
+  <h1 class="site-title">Upload photos</h1>
+  <p class="site-subtitle">Photos go straight to the repository and the site updates itself.</p>
 </header>
 
 <main class="wrap">
@@ -22,138 +22,146 @@
   <!-- 1. Conexão -->
   <section class="card" id="cardAuth">
     <div class="card-head">
-      <h2>1. Conexão com o GitHub</h2>
-      <span class="pill pill--off" id="authPill">Desconectado</span>
+      <h2>1. GitHub connection</h2>
+      <span class="pill pill--off" id="authPill">Not connected</span>
     </div>
 
     <div id="authForm">
       <p class="hint">
-        Cole um <strong>token fine-grained</strong> com permissão <em>Contents: Read and write</em>
-        apenas no repositório <code id="repoName">lucianoamoretti/photos</code>.
-        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar token</a>.
-        Ele fica salvo só neste navegador (localStorage) e nunca é enviado para outro lugar além da API do GitHub.
+        Paste a <strong>fine-grained token</strong> with <em>Contents: Read and write</em>
+        on <code id="repoName">lucianoamoretti/photos</code> only.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a token</a>.
+        It is stored in this browser only (localStorage) and never sent anywhere except the GitHub API.
       </p>
       <div class="row">
         <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off"
-               spellcheck="false" aria-label="Token do GitHub">
-        <button class="btn btn--primary" id="btnConnect" type="button">Conectar</button>
+               spellcheck="false" aria-label="GitHub token">
+        <button class="btn btn--primary" id="btnConnect" type="button">Connect</button>
       </div>
     </div>
 
     <div id="authDone" hidden>
       <p class="hint" id="authWho"></p>
       <div class="row">
-        <a class="btn btn--ghost" href="../edit/">Editar galerias</a>
-        <button class="btn btn--ghost" id="btnForget" type="button">Esquecer token</button>
+        <a class="btn btn--ghost" href="../edit/">Edit galleries</a>
+        <button class="btn btn--ghost" id="btnForget" type="button">Forget token</button>
       </div>
     </div>
   </section>
 
   <!-- 2. Galeria -->
   <section class="card" id="cardGallery" hidden>
-    <div class="card-head"><h2>2. Galeria</h2></div>
+    <div class="card-head"><h2>2. Gallery</h2></div>
 
-    <label class="label" for="gallerySelect">Enviar para</label>
+    <label class="label" for="gallerySelect">Upload to</label>
     <select id="gallerySelect" class="input">
-      <option value="__new__">➕ Nova galeria</option>
+      <option value="__new__">➕ New gallery</option>
     </select>
 
     <div id="newGalleryFields">
-      <label class="label" for="galleryName">Nome da galeria</label>
-      <input type="text" id="galleryName" class="input" placeholder="Ex.: Praia de Dublin 2026" maxlength="80">
-      <p class="hint hint--tight">Pasta: <code id="gallerySlugPreview">images/…</code></p>
+      <label class="label" for="galleryName">Gallery name</label>
+      <input type="text" id="galleryName" class="input" placeholder="e.g. Dublin Beach 2026" maxlength="80">
+      <p class="hint hint--tight">Folder: <code id="gallerySlugPreview">images/…</code></p>
 
-      <label class="label" for="galleryDesc">Descrição <span class="opt">(opcional)</span></label>
-      <input type="text" id="galleryDesc" class="input" placeholder="Uma linha sobre a galeria" maxlength="140">
+      <label class="label" for="galleryDate">Gallery date</label>
+      <input type="date" id="galleryDate" class="input">
+      <p class="hint hint--tight" id="galleryDateHint">Filled in from the oldest photo once you pick the files.</p>
+
+      <label class="label" for="galleryDesc">Description <span class="opt">(optional)</span></label>
+      <input type="text" id="galleryDesc" class="input" placeholder="One line about the gallery" maxlength="140">
     </div>
 
     <div id="coverPicker" hidden>
-      <label class="label">Miniatura da galeria</label>
-      <p class="hint hint--tight">Toque em uma foto para usá-la como capa na página inicial.</p>
+      <label class="label">Gallery thumbnail</label>
+      <p class="hint hint--tight">Tap a photo to use it as the cover on the home page.</p>
       <div class="coverstrip" id="coverStrip"></div>
     </div>
   </section>
 
   <!-- 3. Créditos -->
   <section class="card" id="cardCredits" hidden>
-    <div class="card-head"><h2>3. Créditos padrão</h2></div>
-    <p class="hint">Aplicados a todas as fotos deste envio. Dá para trocar o autor foto a foto abaixo.</p>
+    <div class="card-head"><h2>3. Default credits</h2></div>
+    <p class="hint">Applied to every photo in this upload. You can change the author photo by photo below.</p>
 
     <div class="grid-2">
       <div>
-        <label class="label" for="defAuthor">Autor da foto</label>
-        <input type="text" id="defAuthor" class="input" placeholder="Nome do fotógrafo">
+        <label class="label" for="defAuthor">Photographer</label>
+        <input type="text" id="defAuthor" class="input" placeholder="Photographer name">
       </div>
       <div>
-        <label class="label" for="defYear">Ano</label>
+        <label class="label" for="defYear">Year</label>
         <input type="text" id="defYear" class="input" inputmode="numeric" maxlength="4">
       </div>
     </div>
 
-    <label class="label" for="defLicense">Licença</label>
+    <label class="label" for="defInstagram">Photographer's Instagram <span class="opt">(optional)</span></label>
+    <input type="text" id="defInstagram" class="input" placeholder="@username" autocapitalize="none" spellcheck="false">
+    <p class="hint hint--tight">Shown next to the credit on each photo, linking to the profile.</p>
+
+    <label class="label" for="defLicense">Licence</label>
     <select id="defLicense" class="input">
-      <option>Todos os direitos reservados</option>
+      <option>All rights reserved</option>
       <option>CC BY 4.0</option>
       <option>CC BY-NC 4.0</option>
       <option>CC BY-SA 4.0</option>
-      <option>Domínio público (CC0)</option>
+      <option>Public domain (CC0)</option>
     </select>
 
-    <label class="label" for="defLocation">Local <span class="opt">(opcional)</span></label>
-    <input type="text" id="defLocation" class="input" placeholder="Ex.: Dublin, Irlanda">
+    <label class="label" for="defLocation">Location <span class="opt">(optional)</span></label>
+    <input type="text" id="defLocation" class="input" placeholder="e.g. Dublin, Ireland">
   </section>
 
   <!-- 4. Fotos -->
   <section class="card" id="cardFiles" hidden>
     <div class="card-head">
-      <h2>4. Fotos</h2>
+      <h2>4. Photos</h2>
       <span class="pill" id="filesPill" hidden>0</span>
     </div>
 
     <label class="dropzone" id="dropzone" for="fileInput">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 20h16"/></svg>
-      <span class="dz-title">Escolher fotos</span>
-      <span class="dz-sub">ou arraste os arquivos aqui</span>
+      <span class="dz-title">Choose photos</span>
+      <span class="dz-sub">or drag the files here</span>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
     </label>
 
-    <label class="label" for="orderSelect">Ordem das fotos na galeria</label>
+    <label class="label" for="orderSelect">Photo order in the gallery</label>
     <select id="orderSelect" class="input">
-      <option value="date-asc">Data da foto — da mais antiga para a mais nova</option>
-      <option value="date-desc">Data da foto — da mais nova para a mais antiga</option>
-      <option value="name-asc">Nome do arquivo (A → Z)</option>
-      <option value="picked">Na ordem em que escolhi</option>
+      <option value="date-asc">Date taken — oldest first</option>
+      <option value="date-desc">Date taken — newest first</option>
+      <option value="name-asc">File name (A → Z)</option>
+      <option value="picked">The order I picked them</option>
     </select>
-    <p class="hint hint--tight" id="orderHint">A data vem do EXIF da foto; sem EXIF, usa a data do arquivo.</p>
+    <p class="hint hint--tight" id="orderHint">The date comes from the photo EXIF; without EXIF, the file date is used.</p>
 
     <div class="bulkname">
-      <label class="label" for="bulkTitle">Mesmo nome para todas <span class="opt">(numeradas em sequência)</span></label>
+      <label class="label" for="bulkTitle">Same name for all <span class="opt">(numbered in sequence)</span></label>
       <div class="row row--bulk">
-        <input type="text" id="bulkTitle" class="input" placeholder="Ex.: Praia" maxlength="60">
+        <input type="text" id="bulkTitle" class="input" placeholder="e.g. Match" maxlength="60">
         <input type="number" id="bulkStart" class="input input--num" value="1" min="1" max="9999"
-               inputmode="numeric" aria-label="Número inicial">
-        <button class="btn" id="btnBulk" type="button">Aplicar</button>
+               inputmode="numeric" aria-label="Starting number">
+        <button class="btn" id="btnBulk" type="button">Apply</button>
       </div>
-      <p class="hint hint--tight" id="bulkPreview">Deixe vazio para usar o nome de cada arquivo.</p>
+      <p class="hint hint--tight" id="bulkPreview">Leave empty to keep each file name.</p>
     </div>
 
     <label class="check">
       <input type="checkbox" id="resizeToggle" checked>
-      <span>Reduzir o arquivo do download para no máximo <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px
-      (desmarque para guardar a foto original em tamanho cheio)</span>
+      <span>Shrink the download file to at most <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px
+      (uncheck to keep the original full-size photo)</span>
     </label>
-    <p class="hint hint--tight">De qualquer forma são geradas versões leves — 700 px para o grid
-    e 1800 px para a tela cheia — para a galeria abrir rápido no celular.</p>
+    <p class="hint hint--tight">Either way, light versions are generated — 700 px for the grid
+    and 1800 px for full screen — so the gallery loads fast on a phone.</p>
 
-    <p class="hint hint--tight" id="starHint" hidden>A estrela marca qual foto vira a miniatura da galeria.</p>
+    <p class="hint hint--tight" id="starHint" hidden>The star marks which photo becomes the gallery thumbnail.</p>
     <ul class="filelist" id="fileList"></ul>
   </section>
 
   <!-- 5. Publicar -->
   <section class="card" id="cardPublish" hidden>
-    <div class="card-head"><h2>5. Publicar</h2></div>
+    <div class="card-head"><h2>5. Publish</h2></div>
 
-    <button class="btn btn--primary btn--big" id="btnPublish" type="button" disabled>Publicar fotos</button>
+    <button class="btn btn--primary btn--big" id="btnPublish" type="button" disabled>Publish photos</button>
 
     <div class="progress" id="progressWrap" hidden>
       <div class="progress-bar"><span id="progressBar"></span></div>
@@ -164,15 +172,15 @@
 
     <div class="done" id="doneBox" hidden>
       <p id="doneText"></p>
-      <a class="btn btn--primary" id="doneLink" href="#">Ver galeria</a>
-      <button class="btn btn--ghost" id="btnAnother" type="button">Enviar mais fotos</button>
+      <a class="btn btn--primary" id="doneLink" href="#">View gallery</a>
+      <button class="btn btn--ghost" id="btnAnother" type="button">Upload more photos</button>
     </div>
   </section>
 
 </main>
 
 <footer class="site-footer">
-  <p class="footer-note">Depois de publicar, o GitHub Pages leva cerca de um minuto para atualizar o site.</p>
+  <p class="footer-note">After publishing, GitHub Pages takes about a minute to update the site.</p>
 </footer>
 
 <script src="../assets/js/gh.js"></script>

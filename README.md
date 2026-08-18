@@ -3,6 +3,9 @@
 Galerias de fotos com grid fluido, lightbox, botão de download e créditos de direito
 autoral por foto. HTML/CSS/JS puro — sem build, sem dependências.
 
+A interface do site é toda em inglês; este README e os comentários do código ficaram
+em português.
+
 - **Site:** https://lucianoamoretti.github.io/photos/
 - **Enviar fotos:** https://lucianoamoretti.github.io/photos/upload/
 - **Editar galerias:** https://lucianoamoretti.github.io/photos/edit/
@@ -18,6 +21,7 @@ escrita. O que protege o repositório é o token, não o sigilo da URL.
 index.html                  capa — lista as galerias
 gallery.html?g=<id>         grid de uma galeria, com lightbox
 upload/index.html           página de envio de fotos
+edit/index.html             página de edição de galerias
 galleries.json              manifesto: galerias, fotos e créditos
 images/<galeria>/           foto original — é o que o botão "Baixar" entrega
 images/<galeria>/view/      1800 px — o que aparece em tela cheia
@@ -63,12 +67,12 @@ Nunca comite o token no repositório.
 
 Em `/edit/`, com o mesmo token, dá para:
 
-- trocar nome e descrição da galeria;
+- trocar nome, data e descrição da galeria;
 - escolher a miniatura (a estrela em cada foto);
 - dar o mesmo nome a todas as fotos, numeradas em sequência — e, se quiser,
   renomear também os arquivos (o download sai com o nome novo);
 - reordenar: por data, por nome, invertendo, com as setas ↑ ↓ ou arrastando;
-- trocar autor, ano, local e licença de uma foto ou de todas;
+- trocar autor, Instagram, ano, local e licença de uma foto ou de todas;
 - apagar fotos — some o original, a miniatura e a versão de tela cheia.
 
 Tudo o que você mexer fica listado em "Salvar" antes de confirmar, e vai em **um único commit**.
@@ -88,11 +92,11 @@ Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já e
 ```json
 {
   "site": {
-    "title": "Galeria",
-    "subtitle": "Fotografias",
+    "title": "Gallery",
+    "subtitle": "Photography",
     "copyrightHolder": "Luciano Amoretti",
     "defaultAuthor": "",
-    "defaultLicense": "Todos os direitos reservados",
+    "defaultLicense": "All rights reserved",
     "defaultYear": "2026",
     "repo": "lucianoamoretti/photos",
     "branch": "main"
@@ -101,6 +105,7 @@ Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já e
     {
       "id": "praia-2026",
       "name": "Praia 2026",
+      "date": "2026-08-17",
       "description": "Fim de semana em Wicklow",
       "createdAt": "2026-08-18",
       "cover": "images/praia-2026/por-do-sol.jpg",
@@ -110,8 +115,10 @@ Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já e
           "title": "Pôr do sol",
           "author": "Fulano de Tal",
           "year": "2026",
-          "license": "Todos os direitos reservados",
+          "license": "All rights reserved",
           "location": "Wicklow, Irlanda",
+          "instagram": "oliveirapaolacosta",
+          "taken": "2026-08-17T20:14:03",
           "alt": "Sol se pondo atrás das montanhas"
         }
       ]
@@ -125,11 +132,13 @@ Campos por foto — só `file` é obrigatório; os demais caem no padrão de `si
 | Campo | Descrição |
 |---|---|
 | `file` | Caminho relativo do arquivo |
-| `title` | Legenda no card e no lightbox (padrão: "Foto N") |
+| `title` | Legenda no card e no lightbox (padrão: "Photo N") |
 | `author` | Autor da foto |
 | `year` | Ano do copyright |
 | `license` | Texto de licença |
 | `location` | Local, mostrado ao lado da licença |
+| `instagram` | Usuário do Instagram do fotógrafo, sem o @ — vira link no lightbox |
+| `taken` | Data em que a foto foi tirada (EXIF), usada para ordenar |
 | `alt` | Texto alternativo (acessibilidade) |
 | `thumb` | Miniatura opcional para o grid |
 
@@ -140,4 +149,5 @@ Campos por foto — só `file` é obrigatório; os demais caem no padrão de `si
 - Cores originais das fotos (sem filtro).
 - Lightbox com setas, teclado (← → Esc) e swipe no celular.
 - Download em dois lugares: botão no card e botão no lightbox.
-- Crédito `© ano autor` + licença visíveis em cada foto.
+- Crédito `© ano autor` + Instagram clicável + licença visíveis em cada foto.
+- Data da galeria na capa e no cabeçalho, preenchida a partir da foto mais antiga.

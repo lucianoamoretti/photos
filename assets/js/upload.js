@@ -34,6 +34,7 @@
     gallerySelect: $('gallerySelect'), newFields: $('newGalleryFields'),
     galleryName: $('galleryName'), galleryDesc: $('galleryDesc'), slugPreview: $('gallerySlugPreview'),
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'), defLocation: $('defLocation'),
+    defInstagram: $('defInstagram'), galleryDate: $('galleryDate'), galleryDateHint: $('galleryDateHint'),
     coverPicker: $('coverPicker'), coverStrip: $('coverStrip'),
     dropzone: $('dropzone'), fileInput: $('fileInput'), fileList: $('fileList'), filesPill: $('filesPill'),
     bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
@@ -51,7 +52,7 @@
 
   el.btnConnect.addEventListener('click', function () {
     var token = el.tokenInput.value.trim();
-    if (!token) { alertMsg('Cole o token primeiro.'); return; }
+    if (!token) { alertMsg('Paste the token first.'); return; }
     connect(token, true);
   });
 
@@ -71,17 +72,17 @@
 
   function connect(token, remember) {
     el.btnConnect.disabled = true;
-    el.authPill.textContent = 'Conectando\u2026';
+    el.authPill.textContent = 'Connecting\u2026';
     el.authPill.className = 'pill';
 
     GH.connect(token, remember)
       .then(function () { return loadManifest(); })
       .then(function () {
-        el.authPill.textContent = 'Conectado';
+        el.authPill.textContent = 'Connected';
         el.authPill.className = 'pill pill--ok';
         el.authForm.hidden = true;
         el.authDone.hidden = false;
-        el.authWho.textContent = 'Escrevendo em ' + state.repo + ' (branch ' + GH.state.branch + ').';
+        el.authWho.textContent = 'Writing to ' + state.repo + ' (branch ' + GH.state.branch + ').';
         showForm();
       })
       .catch(function (err) {
@@ -149,7 +150,7 @@
 
     var optNew = document.createElement('option');
     optNew.value = '__new__';
-    optNew.textContent = '➕ Nova galeria';
+    optNew.textContent = '➕ New gallery';
     sel.appendChild(optNew);
 
     (state.data.galleries || []).forEach(function (g) {
@@ -207,7 +208,7 @@
       btn.className = 'coverthumb' + (chosen ? ' coverthumb--on' : '');
       btn.title = p.title || '';
       btn.setAttribute('aria-pressed', chosen ? 'true' : 'false');
-      btn.setAttribute('aria-label', 'Usar "' + (p.title || p.file) + '" como capa');
+      btn.setAttribute('aria-label', 'Use "' + (p.title || p.file) + '" as the cover');
 
       var img = document.createElement('img');
       img.src = '../' + p.file;
@@ -284,7 +285,7 @@
     var base = el.bulkTitle.value.trim();
 
     if (!base) {
-      el.bulkPreview.textContent = 'Deixe vazio para usar o nome de cada arquivo.';
+      el.bulkPreview.textContent = 'Leave empty to keep each file name.';
       return;
     }
 
@@ -295,8 +296,8 @@
     var names = [];
     for (var i = 0; i < Math.min(3, count); i++) names.push(base + ' ' + pad(start + i, width));
 
-    el.bulkPreview.textContent = 'Fica: ' + names.join(', ') +
-      (count > 3 ? '…' : '') + ' · arquivos ' + slugify(names[0]) + '.jpg, ' +
+    el.bulkPreview.textContent = 'Result: ' + names.join(', ') +
+      (count > 3 ? '…' : '') + ' · files ' + slugify(names[0]) + '.jpg, ' +
       slugify(names[1]) + '.jpg…';
   }
 
@@ -304,6 +305,22 @@
     updateSlugPreview();
     refreshPublishState();
   });
+
+  var galleryDateTouched = false;
+  el.galleryDate.addEventListener('input', function () { galleryDateTouched = true; });
+
+  /* Sugere a data da galeria a partir da foto mais antiga do envio. */
+  function suggestGalleryDate() {
+    if (galleryDateTouched || el.gallerySelect.value !== '__new__') return;
+
+    var oldest = state.items.reduce(function (min, it) {
+      return (it.date && (!min || it.date < min)) ? it.date : min;
+    }, 0);
+    if (!oldest) return;
+
+    el.galleryDate.value = isoLocal(oldest).slice(0, 10);
+    el.galleryDateHint.textContent = 'Taken from the oldest photo — change it if you like.';
+  }
 
   function updateSlugPreview() {
     var s = slugify(el.galleryName.value);
@@ -465,7 +482,7 @@
     // Mostra a lista na hora; a data do EXIF chega logo depois e reordena
     renderFiles();
     refreshPublishState();
-    el.orderHint.textContent = 'Lendo a data das fotos…';
+    el.orderHint.textContent = 'Reading photo dates…';
 
     Promise.all(added.map(function (item) {
       return readExifDate(item.file).then(function (ts) {
@@ -474,21 +491,22 @@
     })).then(function () {
       sortItems();
       applyNumbering();
+      suggestGalleryDate();
       renderFiles();
       updateBulkPreview();
       refreshPublishState();
 
-      var semExif = state.items.filter(function (it) { return !it.hasExif; }).length;
-      el.orderHint.textContent = semExif
-        ? semExif + ' foto(s) sem data no EXIF — nessas foi usada a data do arquivo.'
-        : 'Ordenadas pela data em que as fotos foram tiradas (EXIF).';
+      var noExif = state.items.filter(function (it) { return !it.hasExif; }).length;
+      el.orderHint.textContent = noExif
+        ? noExif + ' photo(s) with no EXIF date — the file date was used for those.'
+        : 'Sorted by the date the photos were taken (EXIF).';
     });
   }
 
   function renderFiles() {
     el.fileList.innerHTML = '';
     el.filesPill.hidden = state.items.length === 0;
-    el.filesPill.textContent = state.items.length + (state.items.length === 1 ? ' foto' : ' fotos');
+    el.filesPill.textContent = state.items.length + (state.items.length === 1 ? ' photo' : ' photos');
     el.starHint.hidden = state.items.length === 0;
 
     state.items.forEach(function (item) {
@@ -509,8 +527,8 @@
       title.type = 'text';
       title.className = 'input input--sm';
       title.value = item.title;
-      title.placeholder = 'Título da foto';
-      title.setAttribute('aria-label', 'Título da foto');
+      title.placeholder = 'Photo title';
+      title.setAttribute('aria-label', 'Photo title');
       title.addEventListener('input', function () { item.title = title.value; });
       fields.appendChild(title);
 
@@ -518,8 +536,8 @@
       author.type = 'text';
       author.className = 'input input--sm';
       author.value = item.author;
-      author.placeholder = 'Autor (deixe vazio para usar o padrão)';
-      author.setAttribute('aria-label', 'Autor desta foto');
+      author.placeholder = 'Photographer (leave empty to use the default)';
+      author.setAttribute('aria-label', 'Photographer for this photo');
       author.addEventListener('input', function () { item.author = author.value; });
       fields.appendChild(author);
 
@@ -537,9 +555,9 @@
       star.type = 'button';
       star.className = 'fileitem-star' + (chosen ? ' fileitem-star--on' : '');
       star.textContent = chosen ? '★' : '☆';
-      star.title = 'Usar como miniatura da galeria';
+      star.title = 'Use as the gallery thumbnail';
       star.setAttribute('aria-pressed', chosen ? 'true' : 'false');
-      star.setAttribute('aria-label', 'Usar ' + item.file.name + ' como miniatura da galeria');
+      star.setAttribute('aria-label', 'Use ' + item.file.name + ' as the gallery thumbnail');
       star.addEventListener('click', function () {
         state.cover = chosen ? null : { kind: 'new', itemId: item.id };
         renderFiles();
@@ -552,8 +570,8 @@
       rm.type = 'button';
       rm.className = 'fileitem-rm';
       rm.innerHTML = '&times;';
-      rm.title = 'Remover';
-      rm.setAttribute('aria-label', 'Remover ' + item.file.name);
+      rm.title = 'Remove';
+      rm.setAttribute('aria-label', 'Remove ' + item.file.name);
       rm.addEventListener('click', function () {
         state.items = state.items.filter(function (x) { return x.id !== item.id; });
         if (state.cover && state.cover.kind === 'new' && state.cover.itemId === item.id) {
@@ -579,8 +597,8 @@
 
     el.btnPublish.disabled = state.busy || !hasGallery || !hasWork;
     el.btnPublish.textContent = (state.items.length === 0 && hasWork)
-      ? 'Salvar miniatura'
-      : 'Publicar fotos';
+      ? 'Save thumbnail'
+      : 'Publish photos';
   }
 
   // ---------- Redimensionamento ----------
@@ -664,7 +682,7 @@
 
     var missingAuthor = state.items.some(function (it) { return !it.author.trim() && !defAuthor; });
     if (missingAuthor) {
-      alert('Preencha o autor padrão (passo 3) ou o autor de cada foto — o crédito de direito autoral é obrigatório.');
+      alert('Fill in the default photographer (step 3) or the photographer for each photo — the copyright credit is required.');
       el.defAuthor.focus();
       return;
     }
@@ -676,6 +694,7 @@
       gallery = {
         id: id,
         name: name,
+        date: el.galleryDate.value || '',
         description: el.galleryDesc.value.trim(),
         createdAt: GH.today(),
         cover: '',
@@ -683,7 +702,7 @@
       };
     } else {
       gallery = state.data.galleries.filter(function (g) { return g.id === el.gallerySelect.value; })[0];
-      if (!gallery) { alert('Galeria não encontrada. Recarregue a página.'); return; }
+      if (!gallery) { alert('Gallery not found. Reload the page.'); return; }
       if (!gallery.photos) gallery.photos = [];
     }
 
@@ -704,10 +723,10 @@
 
     state.items.forEach(function (item, i) {
       chain = chain.then(function () {
-        progress(step, total, 'Preparando ' + (i + 1) + '/' + state.items.length + ': ' + item.file.name);
+        progress(step, total, 'Preparing ' + (i + 1) + '/' + state.items.length + ': ' + item.file.name);
         return processImage(item.file);
       }).then(function (out) {
-        var base = slugify(item.title) || slugify(item.file.name.replace(/\.[^.]+$/, '')) || 'foto';
+        var base = slugify(item.title) || slugify(item.file.name.replace(/\.[^.]+$/, '')) || 'photo';
         var filename = base + '.' + out.main.ext;
         var n = 2;
         while (used[filename.toLowerCase()]) { filename = base + '-' + n + '.' + out.main.ext; n++; }
@@ -725,6 +744,7 @@
           year: el.defYear.value.trim(),
           license: el.defLicense.value,
           location: el.defLocation.value.trim(),
+          instagram: GH.instagramHandle(el.defInstagram.value),
           alt: '',
           taken: item.date ? isoLocal(item.date) : ''
         };
@@ -747,7 +767,7 @@
         }).then(function () {
           newPhotos.push(photo);
           step++;
-          progress(step, total, 'Enviadas ' + step + '/' + state.items.length);
+          progress(step, total, 'Uploaded ' + step + '/' + state.items.length);
         });
       });
     });
@@ -769,27 +789,27 @@
 
       var manifest = JSON.stringify(state.data, null, 2) + '\n';
 
-      progress(++step, total, 'Atualizando galleries.json\u2026');
+      progress(++step, total, 'Updating galleries.json\u2026');
       return GH.putBlob(manifest);
     }).then(function (manifestSha) {
       blobs.push({ path: 'galleries.json', sha: manifestSha });
 
-      progress(++step, total, 'Criando commit\u2026');
+      progress(++step, total, 'Creating commit\u2026');
       return GH.commit(newPhotos.length
-        ? 'Adiciona ' + newPhotos.length + ' foto(s) em "' + gallery.name + '"'
-        : 'Atualiza a miniatura de "' + gallery.name + '"', blobs);
+        ? 'Add ' + newPhotos.length + ' photo(s) to "' + gallery.name + '"'
+        : 'Update the thumbnail of "' + gallery.name + '"', blobs);
     }).then(function () {
-      progress(total, total, 'Pronto!');
-      log('✓ Commit publicado.');
+      progress(total, total, 'Done!');
+      log('✓ Commit published.');
       state.busy = false;
       state.items = [];
       state.cover = null;
       renderFiles();
       el.doneBox.hidden = false;
       el.doneText.textContent = (newPhotos.length
-        ? newPhotos.length + ' foto(s) enviada(s) para "' + gallery.name + '"'
-        : 'Miniatura de "' + gallery.name + '" atualizada') +
-        '. O site atualiza em cerca de 1 minuto.';
+        ? newPhotos.length + ' photo(s) uploaded to "' + gallery.name + '"'
+        : 'Thumbnail of "' + gallery.name + '" updated') +
+        '. The site updates in about a minute.';
       el.doneLink.href = '../gallery.html?g=' + encodeURIComponent(gallery.id);
       fillGallerySelect();
       el.gallerySelect.value = gallery.id;
@@ -800,8 +820,8 @@
       refreshPublishState();
     }).catch(function (err) {
       console.error(err);
-      log('✗ Erro: ' + err.message);
-      progress(0, 1, 'Falhou — nada foi publicado.');
+      log('✗ Error: ' + err.message);
+      progress(0, 1, 'Failed — nothing was published.');
       // Desfaz as alterações locais no manifesto para não duplicar numa nova tentativa
       state.busy = false;
       loadManifest().then(function () {

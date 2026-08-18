@@ -9,6 +9,7 @@
     gallery:   document.getElementById('gallery'),
     empty:     document.getElementById('emptyState'),
     name:      document.getElementById('galleryName'),
+    date:      document.getElementById('galleryDate'),
     desc:      document.getElementById('galleryDesc'),
     footer:    document.getElementById('footerCopy'),
     lightbox:  document.getElementById('lightbox'),
@@ -34,7 +35,7 @@
 
   fetch('galleries.json?v=' + Date.now())
     .then(function (r) {
-      if (!r.ok) throw new Error('galleries.json não encontrado');
+      if (!r.ok) throw new Error('galleries.json not found');
       return r.json();
     })
     .then(function (data) {
@@ -46,7 +47,7 @@
         : galleries[0];
 
       els.footer.textContent = '© ' + new Date().getFullYear() + ' ' +
-        (site.copyrightHolder || site.title || 'Galeria') + '. Todos os direitos reservados.';
+        (site.copyrightHolder || site.title || 'Gallery') + '. All rights reserved.';
 
       if (!gallery) {
         els.empty.hidden = false;
@@ -55,7 +56,8 @@
 
       var name = gallery.name || gallery.id;
       els.name.textContent = name;
-      document.title = name + ' — ' + (site.title || 'Galeria');
+      document.title = name + ' — ' + (site.title || 'Gallery');
+      if (gallery.date) els.date.textContent = formatDate(gallery.date);
       if (gallery.description) els.desc.textContent = gallery.description;
 
       photos = (gallery.photos || []).filter(function (p) { return p && p.file; });
@@ -81,7 +83,7 @@
       tile.className = 'tile';
       tile.type = 'button';
       tile.setAttribute('role', 'listitem');
-      tile.setAttribute('aria-label', 'Abrir ' + titleOf(photo, i));
+      tile.setAttribute('aria-label', 'Open ' + titleOf(photo, i));
       tile.addEventListener('click', function () { open(i); });
 
       var img = document.createElement('img');
@@ -114,8 +116,8 @@
       dl.className = 'tile-dl';
       dl.href = photo.file;
       dl.setAttribute('download', fileName(photo));
-      dl.setAttribute('aria-label', 'Baixar ' + titleOf(photo, i));
-      dl.title = 'Baixar';
+      dl.setAttribute('aria-label', 'Download ' + titleOf(photo, i));
+      dl.title = 'Download';
       dl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>';
       dl.addEventListener('click', function (e) { e.stopPropagation(); });
@@ -130,7 +132,7 @@
   // ---------- Helpers de metadados ----------
 
   function titleOf(photo, i) {
-    return photo.title || ('Foto ' + (i + 1));
+    return photo.title || ('Photo ' + (i + 1));
   }
 
   function authorOf(photo) {
@@ -138,7 +140,7 @@
   }
 
   function licenseOf(photo) {
-    return photo.license || site.defaultLicense || 'Todos os direitos reservados';
+    return photo.license || site.defaultLicense || 'All rights reserved';
   }
 
   function yearOf(photo) {
@@ -154,6 +156,20 @@
     var year = yearOf(photo);
     if (!author) return '';
     return '© ' + (year ? year + ' ' : '') + author;
+  }
+
+  /* @usuario -> link para o perfil no Instagram */
+  function instagramOf(photo) {
+    var handle = (photo.instagram || site.defaultInstagram || '').trim().replace(/^@+/, '');
+    return /^[A-Za-z0-9._]{1,30}$/.test(handle) ? handle : '';
+  }
+
+  /* "2026-08-17" -> "17 August 2026" */
+  function formatDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    if (!m) return iso || '';
+    var d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
   // ---------- Lightbox ----------
@@ -181,7 +197,20 @@
 
     var credit = creditLine(photo);
     els.lbCredit.textContent = credit;
-    els.lbCredit.hidden = !credit;
+
+    var handle = instagramOf(photo);
+    if (handle) {
+      var link = document.createElement('a');
+      link.className = 'lb-instagram';
+      link.href = 'https://www.instagram.com/' + handle + '/';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = '@' + handle;
+      if (credit) els.lbCredit.appendChild(document.createTextNode(' · '));
+      els.lbCredit.appendChild(link);
+    }
+
+    els.lbCredit.hidden = !credit && !handle;
 
     var extra = [];
     if (photo.location) extra.push(photo.location);

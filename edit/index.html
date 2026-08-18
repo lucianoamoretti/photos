@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<title>Editar galerias</title>
+<title>Edit galleries</title>
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="../assets/css/admin.css">
 </head>
 <body class="page-admin">
 
 <header class="site-header">
-  <a class="back-link" href="../index.html">&#8249; Ver o site</a>
-  <h1 class="site-title">Editar galerias</h1>
-  <p class="site-subtitle">Renomear, reordenar, trocar a capa e apagar fotos.</p>
+  <a class="back-link" href="../index.html">&#8249; View the site</a>
+  <h1 class="site-title">Edit galleries</h1>
+  <p class="site-subtitle">Rename, reorder, change the cover and delete photos.</p>
 </header>
 
 <main class="wrap">
@@ -22,130 +22,137 @@
   <!-- 1. Conexão -->
   <section class="card" id="cardAuth">
     <div class="card-head">
-      <h2>1. Conexão com o GitHub</h2>
-      <span class="pill pill--off" id="authPill">Desconectado</span>
+      <h2>1. GitHub connection</h2>
+      <span class="pill pill--off" id="authPill">Not connected</span>
     </div>
 
     <div id="authForm">
       <p class="hint">
-        O mesmo token do envio de fotos: fine-grained, com <em>Contents: Read and write</em>
-        em <code id="repoName">lucianoamoretti/photos</code>.
-        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar token</a>.
+        The same token used for uploads: fine-grained, with <em>Contents: Read and write</em>
+        on <code id="repoName">lucianoamoretti/photos</code>.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a token</a>.
       </p>
       <div class="row">
         <input type="password" id="tokenInput" placeholder="github_pat_..." autocomplete="off"
-               spellcheck="false" aria-label="Token do GitHub">
-        <button class="btn btn--primary" id="btnConnect" type="button">Conectar</button>
+               spellcheck="false" aria-label="GitHub token">
+        <button class="btn btn--primary" id="btnConnect" type="button">Connect</button>
       </div>
     </div>
 
     <div id="authDone" hidden>
       <p class="hint" id="authWho"></p>
       <div class="row">
-        <a class="btn btn--ghost" href="../upload/">Enviar fotos</a>
-        <button class="btn btn--ghost" id="btnForget" type="button">Esquecer token</button>
+        <a class="btn btn--ghost" href="../upload/">Upload photos</a>
+        <button class="btn btn--ghost" id="btnForget" type="button">Forget token</button>
       </div>
     </div>
   </section>
 
   <!-- 2. Galeria -->
   <section class="card" id="cardGallery" hidden>
-    <div class="card-head"><h2>2. Galeria</h2></div>
+    <div class="card-head"><h2>2. Gallery</h2></div>
 
-    <label class="label" for="gallerySelect">Editando</label>
+    <label class="label" for="gallerySelect">Editing</label>
     <select id="gallerySelect" class="input"></select>
 
-    <label class="label" for="galleryName">Nome</label>
+    <label class="label" for="galleryName">Name</label>
     <input type="text" id="galleryName" class="input" maxlength="80">
 
-    <label class="label" for="galleryDesc">Descrição</label>
+    <label class="label" for="galleryDate">Gallery date</label>
+    <input type="date" id="galleryDate" class="input">
+
+    <label class="label" for="galleryDesc">Description</label>
     <input type="text" id="galleryDesc" class="input" maxlength="140">
 
-    <p class="hint hint--tight">Pasta no repositório: <code id="galleryFolder">—</code>
-      (não muda ao renomear a galeria)</p>
+    <p class="hint hint--tight">Folder in the repository: <code id="galleryFolder">—</code>
+      (renaming the gallery does not move it)</p>
   </section>
 
   <!-- 3. Créditos -->
   <section class="card" id="cardCredits" hidden>
-    <div class="card-head"><h2>3. Créditos</h2></div>
-    <p class="hint">Preencha e aplique a todas as fotos, ou ajuste foto a foto na lista abaixo.</p>
+    <div class="card-head"><h2>3. Credits</h2></div>
+    <p class="hint">Fill in and apply to every photo, or adjust photo by photo in the list below.</p>
 
     <div class="grid-2">
       <div>
-        <label class="label" for="defAuthor">Autor da foto</label>
-        <input type="text" id="defAuthor" class="input" placeholder="Nome do fotógrafo">
+        <label class="label" for="defAuthor">Photographer</label>
+        <input type="text" id="defAuthor" class="input" placeholder="Photographer name">
       </div>
       <div>
-        <label class="label" for="defYear">Ano</label>
+        <label class="label" for="defYear">Year</label>
         <input type="text" id="defYear" class="input" inputmode="numeric" maxlength="4">
       </div>
     </div>
 
-    <label class="label" for="defLicense">Licença</label>
+    <label class="label" for="defInstagram">Photographer's Instagram</label>
+    <input type="text" id="defInstagram" class="input" placeholder="@username" autocapitalize="none" spellcheck="false">
+    <p class="hint hint--tight">Shown next to the credit on each photo, linking to the profile.</p>
+
+    <label class="label" for="defLicense">Licence</label>
     <select id="defLicense" class="input">
-      <option>Todos os direitos reservados</option>
+      <option>All rights reserved</option>
       <option>CC BY 4.0</option>
       <option>CC BY-NC 4.0</option>
       <option>CC BY-SA 4.0</option>
-      <option>Domínio público (CC0)</option>
+      <option>Public domain (CC0)</option>
     </select>
 
-    <label class="label" for="defLocation">Local</label>
-    <input type="text" id="defLocation" class="input" placeholder="Ex.: Dublin, Irlanda">
+    <label class="label" for="defLocation">Location</label>
+    <input type="text" id="defLocation" class="input" placeholder="e.g. Dublin, Ireland">
 
-    <button class="btn" id="btnApplyCredits" type="button">Aplicar a todas as fotos</button>
+    <button class="btn" id="btnApplyCredits" type="button">Apply to every photo</button>
   </section>
 
   <!-- 4. Nome em lote e ordem -->
   <section class="card" id="cardBulk" hidden>
-    <div class="card-head"><h2>4. Nome e ordem</h2></div>
+    <div class="card-head"><h2>4. Name and order</h2></div>
 
-    <label class="label" for="bulkTitle">Mesmo nome para todas <span class="opt">(numeradas em sequência)</span></label>
+    <label class="label" for="bulkTitle">Same name for all <span class="opt">(numbered in sequence)</span></label>
     <div class="row row--bulk">
-      <input type="text" id="bulkTitle" class="input" placeholder="Ex.: Grêmio 3x3 Red Clover" maxlength="60">
+      <input type="text" id="bulkTitle" class="input" placeholder="e.g. Grêmio 3x3 Red Clover" maxlength="60">
       <input type="number" id="bulkStart" class="input input--num" value="1" min="1" max="9999"
-             inputmode="numeric" aria-label="Número inicial">
-      <button class="btn" id="btnBulk" type="button">Aplicar</button>
+             inputmode="numeric" aria-label="Starting number">
+      <button class="btn" id="btnBulk" type="button">Apply</button>
     </div>
-    <p class="hint hint--tight" id="bulkPreview">Numera na ordem da lista abaixo.</p>
+    <p class="hint hint--tight" id="bulkPreview">Numbered in the order of the list below.</p>
 
     <label class="check">
       <input type="checkbox" id="renameFiles" checked>
-      <span>Renomear também os arquivos, para o download sair com o nome novo</span>
+      <span>Rename the files too, so downloads come out with the new name</span>
     </label>
 
-    <label class="label" for="orderSelect">Reordenar</label>
+    <label class="label" for="orderSelect">Reorder</label>
     <div class="row row--bulk">
       <select id="orderSelect" class="input">
-        <option value="">Manter a ordem atual</option>
-        <option value="date-asc">Data da foto — da mais antiga para a mais nova</option>
-        <option value="date-desc">Data da foto — da mais nova para a mais antiga</option>
-        <option value="name-asc">Nome do arquivo (A → Z)</option>
-        <option value="reverse">Inverter a ordem atual</option>
+        <option value="">Keep the current order</option>
+        <option value="date-asc">Date taken — oldest first</option>
+        <option value="date-desc">Date taken — newest first</option>
+        <option value="name-asc">File name (A → Z)</option>
+        <option value="reverse">Reverse the current order</option>
       </select>
-      <button class="btn" id="btnOrder" type="button">Aplicar</button>
+      <button class="btn" id="btnOrder" type="button">Apply</button>
     </div>
-    <p class="hint hint--tight">Na lista, use ↑ ↓ para mover uma foto (ou arraste, no computador).</p>
+    <p class="hint hint--tight">In the list, use ↑ ↓ to move a photo (or drag it, on a computer).</p>
   </section>
 
   <!-- 5. Fotos -->
   <section class="card" id="cardPhotos" hidden>
     <div class="card-head">
-      <h2>5. Fotos</h2>
+      <h2>5. Photos</h2>
       <span class="pill" id="photosPill"></span>
     </div>
-    <p class="hint hint--tight">A estrela marca a miniatura da galeria. O ✕ marca a foto para ser apagada.</p>
+    <p class="hint hint--tight">The star marks the gallery thumbnail. The ✕ marks a photo for deletion.</p>
     <ul class="filelist" id="photoList"></ul>
   </section>
 
   <!-- 6. Salvar -->
   <section class="card" id="cardSave" hidden>
-    <div class="card-head"><h2>6. Salvar</h2></div>
+    <div class="card-head"><h2>6. Save</h2></div>
 
     <ul class="changes" id="changes"></ul>
 
-    <button class="btn btn--primary btn--big" id="btnSave" type="button" disabled>Salvar alterações</button>
-    <button class="btn btn--ghost" id="btnReset" type="button">Descartar alterações</button>
+    <button class="btn btn--primary btn--big" id="btnSave" type="button" disabled>Save changes</button>
+    <button class="btn btn--ghost" id="btnReset" type="button">Discard changes</button>
 
     <div class="progress" id="progressWrap" hidden>
       <div class="progress-bar"><span id="progressBar"></span></div>
@@ -158,7 +165,7 @@
 </main>
 
 <footer class="site-footer">
-  <p class="footer-note">Depois de salvar, o GitHub Pages leva cerca de um minuto para atualizar o site.</p>
+  <p class="footer-note">After saving, GitHub Pages takes about a minute to update the site.</p>
 </footer>
 
 <script src="../assets/js/gh.js"></script>

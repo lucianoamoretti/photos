@@ -412,6 +412,24 @@ body.no-scroll { overflow: hidden; }
   color: #d8d8d8;
 }
 
+.lb-instagram {
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, .45);
+  padding-bottom: 1px;
+  white-space: nowrap;
+}
+
+.lb-instagram:hover { border-bottom-color: #fff; }
+
+.gallery-date {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
 .lb-license {
   margin: 3px 0 0;
   font-size: .74rem;

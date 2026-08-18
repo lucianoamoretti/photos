@@ -1,5 +1,6 @@
 /* ---------------------------------------------------------
    Home — lista as galerias de galleries.json
+   (textos da interface em inglês)
    --------------------------------------------------------- */
 (function () {
   'use strict';
@@ -14,7 +15,7 @@
 
   fetch('galleries.json?v=' + Date.now())
     .then(function (r) {
-      if (!r.ok) throw new Error('galleries.json não encontrado');
+      if (!r.ok) throw new Error('galleries.json not found');
       return r.json();
     })
     .then(function (data) {
@@ -28,7 +29,7 @@
       if (site.subtitle) els.subtitle.textContent = site.subtitle;
 
       els.footer.textContent = '© ' + new Date().getFullYear() + ' ' +
-        (site.copyrightHolder || site.title || 'Galeria') + '. Todos os direitos reservados.';
+        (site.copyrightHolder || site.title || 'Gallery') + '. All rights reserved.';
 
       render(galleries);
     })
@@ -36,6 +37,14 @@
       console.error(err);
       els.empty.hidden = false;
     });
+
+  /* "2026-08-17" -> "17 August 2026" */
+  function formatDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    if (!m) return iso || '';
+    var d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
 
   function render(galleries) {
     if (!galleries.length) {
@@ -83,8 +92,12 @@
 
       var meta = document.createElement('p');
       meta.className = 'album-meta';
-      meta.textContent = photos.length + (photos.length === 1 ? ' foto' : ' fotos');
-      if (g.description) meta.textContent += ' · ' + g.description;
+
+      var bits = [];
+      if (g.date) bits.push(formatDate(g.date));
+      bits.push(photos.length + (photos.length === 1 ? ' photo' : ' photos'));
+      if (g.description) bits.push(g.description);
+      meta.textContent = bits.join(' · ');
       info.appendChild(meta);
 
       card.appendChild(info);

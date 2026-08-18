@@ -14,6 +14,7 @@
     cardGallery: $('cardGallery'), cardCredits: $('cardCredits'), cardBulk: $('cardBulk'),
     cardPhotos: $('cardPhotos'), cardSave: $('cardSave'),
     gallerySelect: $('gallerySelect'), galleryName: $('galleryName'), galleryDesc: $('galleryDesc'),
+    galleryDate: $('galleryDate'), defInstagram: $('defInstagram'),
     galleryFolder: $('galleryFolder'),
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'),
     defLocation: $('defLocation'), btnApplyCredits: $('btnApplyCredits'),
@@ -38,7 +39,7 @@
 
   el.btnConnect.addEventListener('click', function () {
     var token = el.tokenInput.value.trim();
-    if (!token) { setPill('Cole o token primeiro.', 'error'); return; }
+    if (!token) { setPill('Paste the token first.', 'error'); return; }
     connect(token, true);
   });
 
@@ -58,16 +59,16 @@
 
   function connect(token, remember) {
     el.btnConnect.disabled = true;
-    setPill('Conectando…');
+    setPill('Connecting…');
 
     GH.connect(token, remember)
       .then(function () { return GH.loadManifest(); })
       .then(function (data) {
         state.data = data;
-        setPill('Conectado', 'ok');
+        setPill('Connected', 'ok');
         el.authForm.hidden = true;
         el.authDone.hidden = false;
-        el.authWho.textContent = 'Editando ' + GH.state.repo + ' (branch ' + GH.state.branch + ').';
+        el.authWho.textContent = 'Editing ' + GH.state.repo + ' (branch ' + GH.state.branch + ').';
         showEditor();
       })
       .catch(function (err) {
@@ -78,7 +79,7 @@
 
   function showEditor() {
     if (!state.data.galleries.length) {
-      setPill('Nenhuma galeria para editar', 'off');
+      setPill('No galleries to edit', 'off');
       return;
     }
 
@@ -100,7 +101,7 @@
   }
 
   el.gallerySelect.addEventListener('change', function () {
-    if (isDirty() && !confirm('Você tem alterações não salvas nesta galeria. Trocar mesmo assim?')) {
+    if (isDirty() && !confirm('You have unsaved changes in this gallery. Switch anyway?')) {
       el.gallerySelect.value = state.work.id;
       return;
     }
@@ -116,12 +117,14 @@
     el.gallerySelect.value = id;
     el.galleryName.value = state.work.name || '';
     el.galleryDesc.value = state.work.description || '';
+    el.galleryDate.value = state.work.date || '';
     el.galleryFolder.textContent = 'images/' + state.work.id + '/';
 
     var first = state.work.photos[0] || {};
     el.defAuthor.value = first.author || '';
     el.defYear.value = first.year || '';
     el.defLocation.value = first.location || '';
+    el.defInstagram.value = first.instagram ? '@' + first.instagram : '';
     selectByValue(el.defLicense, first.license);
 
     el.bulkTitle.value = '';
@@ -153,11 +156,16 @@
     refreshChanges();
   });
 
+  el.galleryDate.addEventListener('input', function () {
+    state.work.date = el.galleryDate.value;
+    refreshChanges();
+  });
+
   // ---------- Créditos ----------
 
   el.btnApplyCredits.addEventListener('click', function () {
     var author = el.defAuthor.value.trim();
-    if (!author && !confirm('Sem autor as fotos ficam sem crédito de direito autoral. Continuar?')) {
+    if (!author && !confirm('Without a photographer the photos have no copyright credit. Continue?')) {
       el.defAuthor.focus();
       return;
     }
@@ -167,6 +175,7 @@
       p.year = el.defYear.value.trim();
       p.license = el.defLicense.value;
       p.location = el.defLocation.value.trim();
+      p.instagram = GH.instagramHandle(el.defInstagram.value);
     });
 
     renderPhotos();
@@ -206,7 +215,7 @@
   function updateBulkPreview() {
     var base = el.bulkTitle.value.trim();
     if (!base) {
-      el.bulkPreview.textContent = 'Numera na ordem da lista abaixo.';
+      el.bulkPreview.textContent = 'Numbered in the order of the list below.';
       return;
     }
 
@@ -218,9 +227,9 @@
       names.push(base + ' ' + GH.pad(start + i, width));
     }
 
-    el.bulkPreview.textContent = 'Fica: ' + names.join(', ') +
+    el.bulkPreview.textContent = 'Result: ' + names.join(', ') +
       (alive.length > 3 ? '…' : '') +
-      (el.renameFiles.checked ? ' · arquivos ' + GH.slugify(names[0]) + '.jpg…' : '');
+      (el.renameFiles.checked ? ' · files ' + GH.slugify(names[0]) + '.jpg…' : '');
   }
 
   function livePhotos() {
@@ -271,7 +280,7 @@
 
     var alive = livePhotos().length;
     var gone = photos.length - alive;
-    el.photosPill.textContent = alive + ' foto(s)' + (gone ? ' · ' + gone + ' a apagar' : '');
+    el.photosPill.textContent = alive + ' photo(s)' + (gone ? ' · ' + gone + ' to delete' : '');
 
     photos.forEach(function (photo, index) {
       var li = document.createElement('li');
@@ -304,8 +313,8 @@
       title.type = 'text';
       title.className = 'input input--sm';
       title.value = photo.title || '';
-      title.placeholder = 'Título da foto';
-      title.setAttribute('aria-label', 'Título da foto');
+      title.placeholder = 'Photo title';
+      title.setAttribute('aria-label', 'Photo title');
       title.disabled = photo.deleted;
       title.addEventListener('input', function () {
         photo.title = title.value;
@@ -317,8 +326,8 @@
       author.type = 'text';
       author.className = 'input input--sm';
       author.value = photo.author || '';
-      author.placeholder = 'Autor';
-      author.setAttribute('aria-label', 'Autor desta foto');
+      author.placeholder = 'Photographer';
+      author.setAttribute('aria-label', 'Photographer for this photo');
       author.disabled = photo.deleted;
       author.addEventListener('input', function () {
         photo.author = author.value;
@@ -338,22 +347,22 @@
       tools.className = 'fileitem-tools';
 
       var isCover = state.work.cover === photo.file;
-      tools.appendChild(iconBtn(isCover ? '★' : '☆', 'Usar como miniatura da galeria',
+      tools.appendChild(iconBtn(isCover ? '★' : '☆', 'Use as the gallery thumbnail',
         'fileitem-star' + (isCover ? ' fileitem-star--on' : ''), function () {
           state.work.cover = photo.file;
           renderPhotos();
         }, photo.deleted));
 
-      tools.appendChild(iconBtn('↑', 'Mover para cima', 'fileitem-move', function () {
+      tools.appendChild(iconBtn('↑', 'Move up', 'fileitem-move', function () {
         move(index, -1);
       }));
 
-      tools.appendChild(iconBtn('↓', 'Mover para baixo', 'fileitem-move', function () {
+      tools.appendChild(iconBtn('↓', 'Move down', 'fileitem-move', function () {
         move(index, 1);
       }));
 
       tools.appendChild(iconBtn(photo.deleted ? '↺' : '✕',
-        photo.deleted ? 'Cancelar exclusão' : 'Apagar esta foto', 'fileitem-rm', function () {
+        photo.deleted ? 'Undo delete' : 'Delete this photo', 'fileitem-rm', function () {
           photo.deleted = !photo.deleted;
           if (photo.deleted && state.work.cover === photo.file) state.work.cover = '';
           renderPhotos();
@@ -381,17 +390,33 @@
 
   // ---------- Renomeações ----------
 
-  /* Lista de arquivos a mover, a partir do título de cada foto. */
+  /* Arquivos a mover — só das fotos cujo título mudou nesta sessão.
+     Sem isso, uma foto chamada "dsc7219.jpg" com título "Photo 1" apareceria
+     como renomeação pendente antes de o usuário mexer em qualquer coisa. */
   function computeRenames() {
     if (!el.renameFiles.checked) return [];
 
+    var before = {};
+    (sourceGallery().photos || []).forEach(function (p) { before[p.file] = p; });
+
     var used = {};
-    var renames = [];
+    var changed = [];
 
     livePhotos().forEach(function (photo) {
+      var was = before[photo.file];
+      if (was && (was.title || '') === (photo.title || '')) {
+        used[photo.file.split('/').pop().toLowerCase()] = true;   // nome já ocupado
+      } else {
+        changed.push(photo);
+      }
+    });
+
+    var renames = [];
+
+    changed.forEach(function (photo) {
       var dir = photo.file.slice(0, photo.file.lastIndexOf('/') + 1);
       var ext = GH.extOf(photo.file);
-      var base = GH.slugify(photo.title) || GH.slugify(photo.file.split('/').pop()) || 'foto';
+      var base = GH.slugify(photo.title) || GH.slugify(photo.file.split('/').pop()) || 'photo';
 
       var filename = base + '.' + ext;
       var n = 2;
@@ -407,19 +432,24 @@
     return renames;
   }
 
+  function sourceGallery() {
+    return state.data.galleries.filter(function (g) { return g.id === state.work.id; })[0] || {};
+  }
+
   // ---------- Mudanças pendentes ----------
 
   function pendingChanges() {
     var out = [];
-    var source = state.data.galleries.filter(function (g) { return g.id === state.work.id; })[0] || {};
+    var source = sourceGallery();
     var before = source.photos || [];
 
-    if ((source.name || '') !== (state.work.name || '')) out.push('Nome da galeria');
-    if ((source.description || '') !== (state.work.description || '')) out.push('Descrição da galeria');
-    if ((source.cover || '') !== (state.work.cover || '')) out.push('Miniatura da galeria');
+    if ((source.name || '') !== (state.work.name || '')) out.push('Gallery name');
+    if ((source.description || '') !== (state.work.description || '')) out.push('Gallery description');
+    if ((source.date || '') !== (state.work.date || '')) out.push('Gallery date');
+    if ((source.cover || '') !== (state.work.cover || '')) out.push('Gallery thumbnail');
 
     var deleted = state.work.photos.filter(function (p) { return p.deleted; }).length;
-    if (deleted) out.push(deleted + ' foto(s) serão apagadas — arquivo e versões leves');
+    if (deleted) out.push(deleted + ' photo(s) will be deleted — file and light versions');
 
     var edited = 0;
     livePhotos().forEach(function (p) {
@@ -427,16 +457,17 @@
       if (!was) return;
       if ((was.title || '') !== (p.title || '') || (was.author || '') !== (p.author || '') ||
           (was.year || '') !== (p.year || '') || (was.license || '') !== (p.license || '') ||
-          (was.location || '') !== (p.location || '')) edited++;
+          (was.location || '') !== (p.location || '') ||
+          (was.instagram || '') !== (p.instagram || '')) edited++;
     });
-    if (edited) out.push(edited + ' foto(s) com título ou créditos alterados');
+    if (edited) out.push(edited + ' photo(s) with changed title or credits');
 
     var orderBefore = before.map(function (p) { return p.file; }).join('|');
     var orderNow = livePhotos().map(function (p) { return p.file; }).join('|');
-    if (deleted === 0 && orderBefore !== orderNow) out.push('Ordem das fotos');
+    if (deleted === 0 && orderBefore !== orderNow) out.push('Photo order');
 
     var renames = computeRenames();
-    if (renames.length) out.push(renames.length + ' arquivo(s) renomeados');
+    if (renames.length) out.push(renames.length + ' file(s) renamed');
 
     return out;
   }
@@ -452,7 +483,7 @@
     if (!changes.length) {
       var li = document.createElement('li');
       li.className = 'changes-empty';
-      li.textContent = 'Nada alterado ainda.';
+      li.textContent = 'Nothing changed yet.';
       el.changes.appendChild(li);
     } else {
       changes.forEach(function (text) {
@@ -466,7 +497,7 @@
   }
 
   el.btnReset.addEventListener('click', function () {
-    if (!isDirty() || confirm('Descartar todas as alterações desta galeria?')) {
+    if (!isDirty() || confirm('Discard every change in this gallery?')) {
       loadGallery(state.work.id);
     }
   });
@@ -490,22 +521,22 @@
   function save() {
     var deleted = state.work.photos.filter(function (p) { return p.deleted; });
 
-    if (deleted.length && !confirm('Apagar ' + deleted.length +
-        ' foto(s)? Os arquivos saem do repositório e o download deixa de funcionar.')) {
+    if (deleted.length && !confirm('Delete ' + deleted.length +
+        ' photo(s)? The files leave the repository and their downloads stop working.')) {
       return;
     }
 
     state.busy = true;
     el.btnSave.disabled = true;
     el.log.textContent = '';
-    progress(0, 4, 'Lendo os arquivos do repositório…');
+    progress(0, 4, 'Reading the repository files…');
 
     var entries = [];
     var renames = computeRenames();
 
     GH.loadTree().then(function (tree) {
       // 1. Renomeações: reaproveitam o blob que já está no repositório
-      progress(1, 4, 'Preparando alterações…');
+      progress(1, 4, 'Preparing changes…');
 
       renames.forEach(function (r) {
         moveFile(tree, entries, r.from, r.to);
@@ -547,23 +578,23 @@
         return g.id === gallery.id ? gallery : g;
       });
 
-      progress(2, 4, 'Enviando o manifesto…');
+      progress(2, 4, 'Uploading the manifest…');
       return GH.putBlob(JSON.stringify(state.data, null, 2) + '\n');
     }).then(function (sha) {
       entries.push({ path: 'galleries.json', sha: sha });
 
-      progress(3, 4, 'Criando commit…');
-      return GH.commit('Edita a galeria "' + state.work.name + '"', entries);
+      progress(3, 4, 'Creating commit…');
+      return GH.commit('Edit gallery "' + state.work.name + '"', entries);
     }).then(function () {
       state.busy = false;
       loadGallery(state.work.id);          // recarrega a partir do manifesto já atualizado
       refreshGallerySelect();
-      progress(4, 4, 'Pronto!');
-      log('✓ Alterações publicadas. O site atualiza em cerca de 1 minuto.');
+      progress(4, 4, 'Done!');
+      log('✓ Changes published. The site updates in about a minute.');
     }).catch(function (err) {
       console.error(err);
-      log('✗ Erro: ' + err.message);
-      progress(0, 1, 'Falhou — nada foi alterado no repositório.');
+      log('✗ Error: ' + err.message);
+      progress(0, 1, 'Failed — nothing was changed in the repository.');
       state.busy = false;
       // Recarrega do GitHub para não continuar de um estado meio aplicado
       GH.loadManifest().then(function (data) {

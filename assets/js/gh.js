@@ -71,6 +71,15 @@ window.GH = (function () {
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
   }
 
+  /* "@Fulano", "instagram.com/fulano" -> "fulano" ("" se não parecer um usuário) */
+  function instagramHandle(raw) {
+    var h = (raw || '').trim()
+      .replace(/^(https?:\/\/)?(www\.)?instagram\.com\/?/i, '')
+      .replace(/[/?#].*$/, '')
+      .replace(/^@+/, '');
+    return /^[A-Za-z0-9._]{1,30}$/.test(h) ? h : '';
+  }
+
   function extOf(name) {
     var m = /\.([a-z0-9]+)$/i.exec(name);
     return m ? m[1].toLowerCase() : 'jpg';
@@ -229,6 +238,7 @@ window.GH = (function () {
     pad: pad,
     today: today,
     humanSize: humanSize,
-    extOf: extOf
+    extOf: extOf,
+    instagramHandle: instagramHandle
   };
 })();
