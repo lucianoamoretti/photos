@@ -9,7 +9,7 @@
     "repo": "lucianoamoretti/photos",
     "branch": "main",
     "url": "https://lucianoamoretti.github.io/photos",
-    "statsEndpoint": ""
+    "statsEndpoint": "https://photo-stats.lushiriu.workers.dev"
   },
   "galleries": [
     {
