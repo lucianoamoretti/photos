@@ -26,6 +26,7 @@
 
   var photos = [];
   var site = {};
+  var galleryId = '';
   var current = -1;
   var lastFocus = null;
 
@@ -62,6 +63,11 @@
       if (gallery.description) els.desc.textContent = gallery.description;
 
       photos = (gallery.photos || []).filter(function (p) { return p && p.file; });
+      galleryId = gallery.id;
+
+      Track.configure(site);
+      Track.gallery(galleryId);
+
       render();
     })
     .catch(function (err) {
@@ -121,7 +127,10 @@
       dl.title = 'Download';
       dl.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>';
-      dl.addEventListener('click', function (e) { e.stopPropagation(); });
+      dl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        Track.download(galleryId, photo.file);
+      });
       tile.appendChild(dl);
 
       frag.appendChild(tile);
@@ -221,6 +230,8 @@
     els.lbDl.href = photo.file;
     els.lbDl.setAttribute('download', fileName(photo));
 
+    Track.view(galleryId, photo.file);
+
     var many = photos.length > 1;
     els.lbPrev.hidden = !many;
     els.lbNext.hidden = !many;
@@ -254,6 +265,10 @@
     if (!photos.length) return;
     show((current + delta + photos.length) % photos.length);
   }
+
+  els.lbDl.addEventListener('click', function () {
+    Track.download(galleryId, photos[current] && photos[current].file);
+  });
 
   els.lbClose.addEventListener('click', close);
   els.lbPrev.addEventListener('click', function () { step(-1); });

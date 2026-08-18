@@ -9,8 +9,9 @@ em português.
 - **Site:** https://lucianoamoretti.github.io/photos/
 - **Enviar fotos:** https://lucianoamoretti.github.io/photos/upload/
 - **Editar galerias:** https://lucianoamoretti.github.io/photos/edit/
+- **Estatísticas:** https://lucianoamoretti.github.io/photos/stats/
 
-As duas últimas não aparecem em lugar nenhum do site: não têm link, levam `noindex` e estão
+As três últimas não aparecem em lugar nenhum do site: não têm link, levam `noindex` e estão
 bloqueadas no `robots.txt`. Elas continuam acessíveis por URL — em site estático não existe
 login — mas **sem o token do GitHub não fazem nada**: só leem o manifesto e falham em qualquer
 escrita. O que protege o repositório é o token, não o sigilo da URL.
@@ -23,6 +24,8 @@ g/<id>/index.html           página da galeria (é o link que se compartilha)
 gallery.html?g=<id>         a mesma galeria, template das páginas em g/
 upload/index.html           página de envio de fotos
 edit/index.html             página de edição de galerias
+stats/index.html            página de estatísticas
+analytics/                  coletor de estatísticas (Cloudflare Worker + D1)
 galleries.json              manifesto: galerias, fotos e créditos
 images/<galeria>/           foto original — é o que o botão "Baixar" entrega
 images/<galeria>/view/      1800 px — o que aparece em tela cheia
@@ -95,6 +98,16 @@ Em `/edit/`, com o mesmo token, dá para:
 
 Tudo o que você mexer fica listado em "Salvar" antes de confirmar, e vai em **um único commit**.
 Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já está no repositório.
+
+## Estatísticas
+
+Site estático não tem log de acesso: quem conta é um Cloudflare Worker com banco D1,
+cujo código está em [`analytics/`](analytics/) — com o passo a passo para publicar.
+Enquanto `site.statsEndpoint` estiver vazio no `galleries.json`, o site não envia nada.
+
+Depois de configurado, `/stats/` mostra visitas da capa, aberturas por galeria e
+visualizações e downloads foto a foto, com miniatura. Sem cookies e sem identificar
+visitante — só contadores por dia, então não precisa de banner de consentimento.
 
 ## Adicionando fotos na mão
 

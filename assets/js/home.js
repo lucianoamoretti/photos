@@ -31,6 +31,9 @@
       els.footer.textContent = '© ' + new Date().getFullYear() + ' ' +
         (site.copyrightHolder || site.title || 'Gallery') + '. All rights reserved.';
 
+      Track.configure(site);
+      Track.page();
+
       render(galleries);
     })
     .catch(function (err) {

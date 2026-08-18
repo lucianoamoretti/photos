@@ -8,7 +8,8 @@
     "defaultYear": "2026",
     "repo": "lucianoamoretti/photos",
     "branch": "main",
-    "url": "https://lucianoamoretti.github.io/photos"
+    "url": "https://lucianoamoretti.github.io/photos",
+    "statsEndpoint": ""
   },
   "galleries": [
     {
