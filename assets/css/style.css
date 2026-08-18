@@ -520,3 +520,40 @@ body.no-scroll { overflow: hidden; }
     transition-duration: .01ms !important;
   }
 }
+
+/* ---------- Salvar imagem: só pelo botão Download ---------- */
+
+.tile img,
+.lb-stage img,
+.album-frame img {
+  -webkit-touch-callout: none;   /* tira a folha de "salvar imagem" no iOS */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(28px + var(--safe-b));
+  transform: translate(-50%, 14px);
+  z-index: 200;
+  max-width: min(88vw, 420px);
+  padding: 13px 20px;
+  border-radius: 999px;
+  background: rgba(24, 24, 24, .96);
+  border: 1px solid rgba(255, 255, 255, .16);
+  color: var(--fg);
+  font-size: .84rem;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+.toast--on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

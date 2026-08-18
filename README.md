@@ -182,4 +182,7 @@ Campos por foto — só `file` é obrigatório; os demais caem no padrão de `si
 - Lightbox com setas, teclado (← → Esc) e swipe no celular.
 - Download em dois lugares: botão no card e botão no lightbox.
 - Crédito `© ano autor` + Instagram clicável + licença visíveis em cada foto.
+- "Salvar imagem" do navegador desativado nas fotos, com aviso apontando o botão
+  Download — não é proteção (o arquivo precisa estar acessível para aparecer na tela),
+  é um empurrão para o caminho que também conta nas estatísticas.
 - Data da galeria na capa e no cabeçalho, preenchida a partir da foto mais antiga.
