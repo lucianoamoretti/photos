@@ -658,6 +658,25 @@
     return m ? m[1].toLowerCase() : 'jpg';
   }
 
+  /* Página própria da galeria, com as tags de preview (WhatsApp e afins). */
+  function galleryPageEntry(gallery, blobs) {
+    return fetch('../gallery.html?v=' + Date.now())
+      .then(function (r) {
+        if (!r.ok) throw new Error('gallery.html');
+        return r.text();
+      })
+      .then(function (template) {
+        return GH.putBlob(PageGen.build(template, state.data.site || {}, gallery));
+      })
+      .then(function (sha) {
+        blobs.push({ path: PageGen.path(gallery), sha: sha });
+      })
+      .catch(function (err) {
+        // O preview é um extra: não vale derrubar a publicação das fotos
+        log('⚠ Link preview page not generated: ' + err.message);
+      });
+  }
+
   // ---------- Publicação ----------
 
   el.btnPublish.addEventListener('click', publish);
@@ -793,7 +812,8 @@
       return GH.putBlob(manifest);
     }).then(function (manifestSha) {
       blobs.push({ path: 'galleries.json', sha: manifestSha });
-
+      return galleryPageEntry(gallery, blobs);
+    }).then(function () {
       progress(++step, total, 'Creating commit\u2026');
       return GH.commit(newPhotos.length
         ? 'Add ' + newPhotos.length + ' photo(s) to "' + gallery.name + '"'
@@ -810,7 +830,7 @@
         ? newPhotos.length + ' photo(s) uploaded to "' + gallery.name + '"'
         : 'Thumbnail of "' + gallery.name + '" updated') +
         '. The site updates in about a minute.';
-      el.doneLink.href = '../gallery.html?g=' + encodeURIComponent(gallery.id);
+      el.doneLink.href = '../g/' + gallery.id + '/';
       fillGallerySelect();
       el.gallerySelect.value = gallery.id;
       el.newFields.hidden = true;

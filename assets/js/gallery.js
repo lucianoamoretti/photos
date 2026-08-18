@@ -31,7 +31,8 @@
 
   // ---------- Carregamento ----------
 
-  var wantedId = new URLSearchParams(location.search).get('g');
+  // As páginas geradas em g/<id>/ trazem o id embutido; gallery.html usa ?g=
+  var wantedId = window.GALLERY_ID || new URLSearchParams(location.search).get('g');
 
   fetch('galleries.json?v=' + Date.now())
     .then(function (r) {

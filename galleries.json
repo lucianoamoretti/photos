@@ -7,7 +7,8 @@
     "defaultLicense": "All rights reserved",
     "defaultYear": "2026",
     "repo": "lucianoamoretti/photos",
-    "branch": "main"
+    "branch": "main",
+    "url": "https://lucianoamoretti.github.io/photos"
   },
   "galleries": [
     {

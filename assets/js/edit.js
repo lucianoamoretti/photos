@@ -532,6 +532,7 @@
     progress(0, 4, 'Reading the repository files…');
 
     var entries = [];
+    var savedGallery = null;
     var renames = computeRenames();
 
     GH.loadTree().then(function (tree) {
@@ -566,7 +567,7 @@
       });
 
       // 3. Manifesto
-      var gallery = JSON.parse(JSON.stringify(state.work));
+      var gallery = savedGallery = JSON.parse(JSON.stringify(state.work));
       gallery.photos = gallery.photos.filter(function (p) { return !p.deleted; });
       gallery.photos.forEach(function (p) { delete p.deleted; });
 
@@ -582,7 +583,8 @@
       return GH.putBlob(JSON.stringify(state.data, null, 2) + '\n');
     }).then(function (sha) {
       entries.push({ path: 'galleries.json', sha: sha });
-
+      return galleryPageEntry(savedGallery, entries);
+    }).then(function () {
       progress(3, 4, 'Creating commit…');
       return GH.commit('Edit gallery "' + state.work.name + '"', entries);
     }).then(function () {
@@ -603,6 +605,26 @@
         refreshGallerySelect();
       });
     });
+  }
+
+  /* Página própria da galeria, com as tags de preview (WhatsApp e afins). */
+  function galleryPageEntry(gallery, entries) {
+    if (!gallery) return Promise.resolve();
+
+    return fetch('../gallery.html?v=' + Date.now())
+      .then(function (r) {
+        if (!r.ok) throw new Error('gallery.html');
+        return r.text();
+      })
+      .then(function (template) {
+        return GH.putBlob(PageGen.build(template, state.data.site || {}, gallery));
+      })
+      .then(function (sha) {
+        entries.push({ path: PageGen.path(gallery), sha: sha });
+      })
+      .catch(function (err) {
+        log('⚠ Link preview page not generated: ' + err.message);
+      });
   }
 
   function dirOf(path) {

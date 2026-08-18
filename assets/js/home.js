@@ -65,7 +65,7 @@
 
       var card = document.createElement('a');
       card.className = 'album';
-      card.href = 'gallery.html?g=' + encodeURIComponent(g.id);
+      card.href = 'g/' + encodeURIComponent(g.id) + '/';
 
       var frame = document.createElement('div');
       frame.className = 'album-frame';
