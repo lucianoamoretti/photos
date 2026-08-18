@@ -6,19 +6,22 @@
 (function () {
   'use strict';
 
-  var TOKEN_KEY = 'photos.gh_token';
-  var API = 'https://api.github.com';
-
   var state = {
-    token: localStorage.getItem(TOKEN_KEY) || '',
-    repo: 'lucianoamoretti/photos',
-    branch: 'main',
+    repo: GH.state.repo,
     data: null,
     items: [],
-    bulk: null,      // {base, width, next} — nome em lote com numeração
+    bulk: null,      // {base, start} — nome em lote com numeração
     cover: null,     // {kind:'existing', file} | {kind:'new', itemId}
     busy: false
   };
+
+  // Atalhos para os utilitários compartilhados (assets/js/gh.js)
+  var slugify = GH.slugify;
+  var prettyTitle = GH.prettyTitle;
+  var pad = GH.pad;
+  var humanSize = GH.humanSize;
+  var extOf = GH.extOf;
+  var putBlob = GH.putBlob;
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -42,94 +45,53 @@
     doneBox: $('doneBox'), doneText: $('doneText'), doneLink: $('doneLink'), btnAnother: $('btnAnother')
   };
 
-  // ---------- Utilidades ----------
+  // ---------- Conexão ----------
 
-  function slugify(s) {
-    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+  el.repoName.textContent = state.repo;
+
+  el.btnConnect.addEventListener('click', function () {
+    var token = el.tokenInput.value.trim();
+    if (!token) { alertMsg('Cole o token primeiro.'); return; }
+    connect(token, true);
+  });
+
+  el.tokenInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') el.btnConnect.click();
+  });
+
+  el.btnForget.addEventListener('click', function () {
+    GH.forgetToken();
+    location.reload();
+  });
+
+  function alertMsg(msg) {
+    el.authPill.textContent = msg;
+    el.authPill.className = 'pill pill--error';
   }
 
-  function prettyTitle(filename) {
-    var stem = filename.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-    return stem ? stem.charAt(0).toUpperCase() + stem.slice(1) : filename;
-  }
+  function connect(token, remember) {
+    el.btnConnect.disabled = true;
+    el.authPill.textContent = 'Conectando\u2026';
+    el.authPill.className = 'pill';
 
-  function utf8ToBase64(str) {
-    var bytes = new TextEncoder().encode(str), bin = '', chunk = 0x8000;
-    for (var i = 0; i < bytes.length; i += chunk) {
-      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-    }
-    return btoa(bin);
-  }
-
-  function base64ToUtf8(b64) {
-    var bin = atob((b64 || '').replace(/\s/g, ''));
-    var bytes = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  function blobToBase64(blob) {
-    return new Promise(function (resolve, reject) {
-      var fr = new FileReader();
-      fr.onload = function () { resolve(String(fr.result).split(',')[1]); };
-      fr.onerror = function () { reject(new Error('Falha ao ler o arquivo')); };
-      fr.readAsDataURL(blob);
-    });
-  }
-
-  function today() {
-    var d = new Date();
-    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
-    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  }
-
-  function shortDate(ts) {
-    var d = new Date(ts);
-    var p = function (n) { return (n < 10 ? '0' : '') + n; };
-    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
-  }
-
-  function humanSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
-    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-  }
-
-  function api(path, opts) {
-    opts = opts || {};
-    return fetch(API + path, {
-      method: opts.method || 'GET',
-      headers: {
-        'Authorization': 'Bearer ' + state.token,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'Content-Type': 'application/json'
-      },
-      body: opts.body ? JSON.stringify(opts.body) : undefined
-    }).then(function (r) {
-      return r.text().then(function (txt) {
-        var json = {};
-        try { json = txt ? JSON.parse(txt) : {}; } catch (e) { /* resposta sem JSON */ }
-        if (!r.ok) {
-          var msg = json.message || ('HTTP ' + r.status);
-          if (r.status === 401) msg = 'Token inválido ou expirado.';
-          if (r.status === 403) msg = 'Token sem permissão de escrita neste repositório.';
-          if (r.status === 404) msg = 'Não encontrado — confira se o token tem acesso ao repositório.';
-          throw new Error(msg);
-        }
-        return json;
+    GH.connect(token, remember)
+      .then(function () { return loadManifest(); })
+      .then(function () {
+        el.authPill.textContent = 'Conectado';
+        el.authPill.className = 'pill pill--ok';
+        el.authForm.hidden = true;
+        el.authDone.hidden = false;
+        el.authWho.textContent = 'Escrevendo em ' + state.repo + ' (branch ' + GH.state.branch + ').';
+        showForm();
+      })
+      .catch(function (err) {
+        el.btnConnect.disabled = false;
+        alertMsg(err.message);
       });
-    });
   }
 
-  function putBlob(blob) {
-    return blobToBase64(blob).then(function (b64) {
-      return api('/repos/' + state.repo + '/git/blobs', {
-        method: 'POST',
-        body: { content: b64, encoding: 'base64' }
-      });
-    }).then(function (res) { return res.sha; });
+  function loadManifest() {
+    return GH.loadManifest().then(function (data) { state.data = data; });
   }
 
   function log(msg) {
@@ -144,72 +106,18 @@
     el.progressText.textContent = label;
   }
 
-  // ---------- Conexão ----------
-
-  el.repoName.textContent = state.repo;
-
-  el.btnConnect.addEventListener('click', function () {
-    var token = el.tokenInput.value.trim();
-    if (!token) { alertMsg('Cole o token primeiro.'); return; }
-    state.token = token;
-    connect(true);
-  });
-
-  el.tokenInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') el.btnConnect.click();
-  });
-
-  el.btnForget.addEventListener('click', function () {
-    localStorage.removeItem(TOKEN_KEY);
-    state.token = '';
-    location.reload();
-  });
-
-  function alertMsg(msg) {
-    el.authPill.textContent = msg;
-    el.authPill.className = 'pill pill--error';
+  /* Data em que a foto foi tirada, guardada no manifesto para o /edit reordenar. */
+  function isoLocal(ts) {
+    var d = new Date(ts);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+      'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
   }
 
-  function connect(save) {
-    el.btnConnect.disabled = true;
-    el.authPill.textContent = 'Conectando…';
-    el.authPill.className = 'pill';
-
-    api('/repos/' + state.repo)
-      .then(function (repo) {
-        if (!repo.permissions || !repo.permissions.push) {
-          throw new Error('Este token não tem permissão de escrita no repositório.');
-        }
-        state.branch = repo.default_branch || 'main';
-        if (save) localStorage.setItem(TOKEN_KEY, state.token);
-        return loadManifest();
-      })
-      .then(function () {
-        el.authPill.textContent = 'Conectado';
-        el.authPill.className = 'pill pill--ok';
-        el.authForm.hidden = true;
-        el.authDone.hidden = false;
-        el.authWho.textContent = 'Escrevendo em ' + state.repo + ' (branch ' + state.branch + ').';
-        showForm();
-      })
-      .catch(function (err) {
-        el.btnConnect.disabled = false;
-        alertMsg(err.message);
-        if (save) localStorage.removeItem(TOKEN_KEY);
-      });
-  }
-
-  function loadManifest() {
-    return api('/repos/' + state.repo + '/contents/galleries.json?ref=' + state.branch)
-      .then(function (res) {
-        state.data = JSON.parse(base64ToUtf8(res.content));
-        if (!state.data.galleries) state.data.galleries = [];
-        if (!state.data.site) state.data.site = {};
-      })
-      .catch(function () {
-        // Manifesto ainda não existe: começa do zero
-        state.data = { site: {}, galleries: [] };
-      });
+  function shortDate(ts) {
+    var d = new Date(ts);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
 
   function showForm() {
@@ -769,7 +677,7 @@
         id: id,
         name: name,
         description: el.galleryDesc.value.trim(),
-        createdAt: today(),
+        createdAt: GH.today(),
         cover: '',
         photos: []
       };
@@ -817,7 +725,8 @@
           year: el.defYear.value.trim(),
           license: el.defLicense.value,
           location: el.defLocation.value.trim(),
-          alt: ''
+          alt: '',
+          taken: item.date ? isoLocal(item.date) : ''
         };
 
         log('↑ ' + path + ' (' + humanSize(out.main.blob.size) + ')');
@@ -860,46 +769,15 @@
 
       var manifest = JSON.stringify(state.data, null, 2) + '\n';
 
-      progress(++step, total, 'Atualizando galleries.json…');
-      return api('/repos/' + state.repo + '/git/blobs', {
-        method: 'POST',
-        body: { content: utf8ToBase64(manifest), encoding: 'base64' }
-      });
-    }).then(function (manifestBlob) {
-      blobs.push({ path: 'galleries.json', sha: manifestBlob.sha });
+      progress(++step, total, 'Atualizando galleries.json\u2026');
+      return GH.putBlob(manifest);
+    }).then(function (manifestSha) {
+      blobs.push({ path: 'galleries.json', sha: manifestSha });
 
-      progress(++step, total, 'Criando commit…');
-      return api('/repos/' + state.repo + '/git/ref/heads/' + state.branch);
-    }).then(function (ref) {
-      var headSha = ref.object.sha;
-      return api('/repos/' + state.repo + '/git/commits/' + headSha).then(function (commit) {
-        return api('/repos/' + state.repo + '/git/trees', {
-          method: 'POST',
-          body: {
-            base_tree: commit.tree.sha,
-            tree: blobs.map(function (b) {
-              return { path: b.path, mode: '100644', type: 'blob', sha: b.sha };
-            })
-          }
-        }).then(function (tree) {
-          return api('/repos/' + state.repo + '/git/commits', {
-            method: 'POST',
-            body: {
-              message: newPhotos.length
-                ? 'Adiciona ' + newPhotos.length + ' foto(s) em "' + gallery.name + '"'
-                : 'Atualiza a miniatura de "' + gallery.name + '"',
-              tree: tree.sha,
-              parents: [headSha]
-            }
-          });
-        });
-      });
-    }).then(function (commit) {
-      progress(++step, total, 'Publicando…');
-      return api('/repos/' + state.repo + '/git/refs/heads/' + state.branch, {
-        method: 'PATCH',
-        body: { sha: commit.sha }
-      });
+      progress(++step, total, 'Criando commit\u2026');
+      return GH.commit(newPhotos.length
+        ? 'Adiciona ' + newPhotos.length + ' foto(s) em "' + gallery.name + '"'
+        : 'Atualiza a miniatura de "' + gallery.name + '"', blobs);
     }).then(function () {
       progress(total, total, 'Pronto!');
       log('✓ Commit publicado.');
@@ -946,8 +824,8 @@
 
   // ---------- Início ----------
 
-  if (state.token) {
-    el.tokenInput.value = state.token;
-    connect(false);
+  if (GH.state.token) {
+    el.tokenInput.value = GH.state.token;
+    connect(GH.state.token, false);
   }
 })();

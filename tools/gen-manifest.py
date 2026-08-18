@@ -46,6 +46,15 @@ def exif_date(path):
         return 0
 
 
+def taken_iso(folder, name):
+    """Data da foto em ISO local, ou "" se não houver EXIF."""
+    import datetime
+    ts = exif_date(os.path.join(folder, name))
+    if not ts:
+        return ""
+    return datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%dT%H:%M:%S")
+
+
 def photo_key(folder, name):
     """Ordem da galeria: data da foto (mais antiga primeiro), depois nome."""
     path = os.path.join(folder, name)
@@ -112,7 +121,9 @@ def main():
         for name in files:
             path = f"images/{folder}/{name}"
             if path in existing:
-                photos.append(existing[path])
+                entry = existing[path]
+                entry.setdefault("taken", taken_iso(os.path.join(IMAGES_DIR, folder), name))
+                photos.append(entry)
             else:
                 photos.append({
                     "file": path,
@@ -122,6 +133,7 @@ def main():
                     "license": "",
                     "location": "",
                     "alt": "",
+                    "taken": taken_iso(os.path.join(IMAGES_DIR, folder), name),
                 })
                 added += 1
 

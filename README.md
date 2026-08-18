@@ -4,7 +4,13 @@ Galerias de fotos com grid fluido, lightbox, botão de download e créditos de d
 autoral por foto. HTML/CSS/JS puro — sem build, sem dependências.
 
 - **Site:** https://lucianoamoretti.github.io/photos/
-- **Upload:** https://lucianoamoretti.github.io/photos/upload/
+- **Enviar fotos:** https://lucianoamoretti.github.io/photos/upload/
+- **Editar galerias:** https://lucianoamoretti.github.io/photos/edit/
+
+As duas últimas não aparecem em lugar nenhum do site: não têm link, levam `noindex` e estão
+bloqueadas no `robots.txt`. Elas continuam acessíveis por URL — em site estático não existe
+login — mas **sem o token do GitHub não fazem nada**: só leem o manifesto e falham em qualquer
+escrita. O que protege o repositório é o token, não o sigilo da URL.
 
 ## Estrutura
 
@@ -52,6 +58,21 @@ desmarcar e enviar o arquivo original.
 A página é pública, mas o token não: ele fica só no navegador de quem o colou e só é
 enviado para `api.github.com`. Ninguém consegue publicar sem o próprio token.
 Nunca comite o token no repositório.
+
+## Editando galerias
+
+Em `/edit/`, com o mesmo token, dá para:
+
+- trocar nome e descrição da galeria;
+- escolher a miniatura (a estrela em cada foto);
+- dar o mesmo nome a todas as fotos, numeradas em sequência — e, se quiser,
+  renomear também os arquivos (o download sai com o nome novo);
+- reordenar: por data, por nome, invertendo, com as setas ↑ ↓ ou arrastando;
+- trocar autor, ano, local e licença de uma foto ou de todas;
+- apagar fotos — some o original, a miniatura e a versão de tela cheia.
+
+Tudo o que você mexer fica listado em "Salvar" antes de confirmar, e vai em **um único commit**.
+Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já está no repositório.
 
 ## Adicionando fotos na mão
 
