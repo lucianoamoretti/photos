@@ -23,6 +23,12 @@
     lbPrev:    document.getElementById('lbPrev'),
     lbNext:    document.getElementById('lbNext'),
     actions:   document.getElementById('galleryActions'),
+    gate:      document.getElementById('lockGate'),
+    gateForm:  document.getElementById('lockForm'),
+    gateInput: document.getElementById('lockInput'),
+    gateBtn:   document.getElementById('lockSubmit'),
+    gateHint:  document.getElementById('lockHint'),
+    gateError: document.getElementById('lockError'),
     dlAll:     document.getElementById('btnDownloadAll'),
     dlAllLabel:document.getElementById('dlAllLabel'),
     dlAllNote: document.getElementById('dlAllNote')
@@ -72,8 +78,10 @@
       Track.configure(site);
       Track.gallery(galleryId);
 
-      render();
-      setupDownloadAll(gallery);
+      unlock(gallery, function () {
+        render();
+        setupDownloadAll(gallery);
+      });
     })
     .catch(function (err) {
       console.error(err);
@@ -142,6 +150,63 @@
     });
 
     els.gallery.appendChild(frag);
+  }
+
+  // ---------- Galeria privada ----------
+
+  /* Galeria privada não aparece na capa do site; com senha, também
+     não abre sem ela. Quem acerta fica liberado enquanto a aba viver. */
+  function unlock(gallery, done) {
+    var locked = isPrivate(gallery) && gallery.lock && gallery.lock.hash;
+
+    if (!locked || (window.Lock && Lock.remembered(gallery.id))) { done(); return; }
+
+    if (!window.Lock || !Lock.available()) {
+      els.gate.hidden = false;
+      els.gateForm.hidden = true;
+      els.gateHint.textContent = 'This browser cannot check the password. Try a newer one, ' +
+        'or open the page over https.';
+      return;
+    }
+
+    els.gate.hidden = false;
+    els.gateInput.focus();
+
+    els.gateForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var typed = els.gateInput.value;
+      if (!typed) return;
+
+      els.gateBtn.disabled = true;
+      els.gateError.hidden = true;
+      els.gateBtn.textContent = 'Checking…';
+
+      Lock.check(typed, gallery.lock).then(function (ok) {
+        els.gateBtn.disabled = false;
+        els.gateBtn.textContent = 'Open';
+
+        if (!ok) {
+          els.gateError.textContent = 'That password does not open this gallery.';
+          els.gateError.hidden = false;
+          els.gateInput.select();
+          return;
+        }
+
+        Lock.remember(gallery.id);
+        els.gate.hidden = true;
+        done();
+      }).catch(function (err) {
+        console.error(err);
+        els.gateBtn.disabled = false;
+        els.gateBtn.textContent = 'Open';
+        els.gateError.textContent = 'Could not check the password.';
+        els.gateError.hidden = false;
+      });
+    });
+  }
+
+  function isPrivate(gallery) {
+    return gallery.visibility === 'private';
   }
 
   // ---------- Baixar a galeria inteira ----------

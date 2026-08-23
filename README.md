@@ -84,6 +84,36 @@ A página é pública, mas o token não: ele fica só no navegador de quem o col
 enviado para `api.github.com`. Ninguém consegue publicar sem o próprio token.
 Nunca comite o token no repositório.
 
+## Galeria pública ou privada
+
+Cada galeria é **pública** (aparece na capa do site, como sempre) ou **privada**. A privada
+some da capa: só quem tem o link `/g/<id>/` chega nela. Opcionalmente ela pede uma **senha**
+antes de mostrar as fotos. Escolhe-se no passo 2 do upload, e dá para trocar depois no editor
+— inclusive virar pública, e aí ela volta para a capa.
+
+No manifesto isso é `"visibility": "private"` e, quando tem senha, um `"lock"`.
+
+### O que a senha faz, e o que ela não faz
+
+Vale ler antes de mandar uma galeria privada para um cliente.
+
+**O que ela faz:** a galeria sai da capa; a página `/g/<id>/` não abre sem a senha; a página
+leva `noindex` e o preview do link não mostra a foto de capa, só o nome; a senha não fica
+guardada em lugar nenhum — o manifesto tem só o resultado de PBKDF2-SHA256 com 200 mil
+iterações e um sal aleatório, de onde não se volta para a senha.
+
+**O que ela não faz:** as fotos continuam em `images/<galeria>/`, em um repositório público,
+alcançáveis por URL direta. Quem souber (ou adivinhar) o caminho de um arquivo vê a foto sem
+passar pela senha, e o `galleries.json` lista esses caminhos. Ou seja: isto é uma porta com
+tranca, não um cofre. Serve para "não quero isso na capa nem aberto a qualquer um que chegue
+no link"; não serve para material que não pode vazar.
+
+Para privacidade de verdade as fotos precisam sair do repositório público — outro
+armazenamento, com URL assinada e algo que valide a senha do lado do servidor. Não dá para
+fazer isso só com GitHub Pages.
+
+Esqueceu a senha? Não tem como recuperar, só definir outra no editor.
+
 ## Baixar a galeria inteira
 
 Cada galeria pode mostrar um botão **"Download all"** que entrega todas as fotos em um
@@ -117,7 +147,8 @@ Em `/edit/`, com o mesmo token, dá para:
 - reordenar: por data, por nome, invertendo, com as setas ↑ ↓ ou arrastando;
 - trocar autor, Instagram, ano, local e licença de uma foto ou de todas;
 - apagar fotos — some o original, a miniatura e a versão de tela cheia;
-- ligar ou desligar o botão de baixar a galeria inteira.
+- ligar ou desligar o botão de baixar a galeria inteira;
+- alternar entre pública e privada, definir, trocar ou remover a senha.
 
 Tudo o que você mexer fica listado em "Salvar" antes de confirmar, e vai em **um único commit**.
 Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já está no repositório.

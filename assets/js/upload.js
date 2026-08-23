@@ -37,6 +37,8 @@
     defInstagram: $('defInstagram'), galleryDate: $('galleryDate'), galleryDateHint: $('galleryDateHint'),
     coverPicker: $('coverPicker'), coverStrip: $('coverStrip'),
     downloadAll: $('downloadAllToggle'),
+    visibility: $('visibilitySelect'), privateFields: $('privateFields'),
+    galleryPassword: $('galleryPassword'), passwordHint: $('passwordHint'),
     dropzone: $('dropzone'), fileInput: $('fileInput'), fileList: $('fileList'), filesPill: $('filesPill'),
     bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
     bulkPreview: $('bulkPreview'), starHint: $('starHint'),
@@ -167,7 +169,31 @@
 
     var g = selectedGallery();
     el.downloadAll.checked = g ? !!g.downloadAll : false;
+    showVisibility(g);
   }
+
+  /* Mostra público/privado e conta se a galeria já tem senha guardada */
+  function showVisibility(gallery) {
+    el.visibility.value = (gallery && gallery.visibility === 'private') ? 'private' : 'public';
+    el.privateFields.hidden = el.visibility.value !== 'private';
+    el.galleryPassword.value = '';
+
+    var hasLock = !!(gallery && gallery.lock && gallery.lock.hash);
+    el.galleryPassword.placeholder = hasLock
+      ? 'Leave empty to keep the current password'
+      : 'Leave empty for no password';
+    el.passwordHint.textContent = hasLock
+      ? 'This gallery already has a password. Type a new one to replace it, or leave it empty to keep it.'
+      : 'Whoever opens the link has to type it. Only the encrypted form goes to the repository — ' +
+        'the password itself is never stored, so there is no way to recover it, only replace it.';
+  }
+
+  el.visibility.addEventListener('change', function () {
+    el.privateFields.hidden = el.visibility.value !== 'private';
+    refreshPublishState();
+  });
+
+  el.galleryPassword.addEventListener('input', refreshPublishState);
 
   // ---------- Galeria ----------
 
@@ -180,6 +206,7 @@
     var g = selectedGallery();
     el.bulkStart.value = g ? ((g.photos || []).length + 1) : 1;
     el.downloadAll.checked = g ? !!g.downloadAll : false;
+    showVisibility(g);
 
     renderCoverStrip();
     updateBulkPreview();
@@ -193,6 +220,14 @@
   function downloadAllChanged() {
     var g = selectedGallery();
     return !!g && !!g.downloadAll !== el.downloadAll.checked;
+  }
+
+  function visibilityChanged() {
+    var g = selectedGallery();
+    if (!g) return false;
+    var now = g.visibility === 'private' ? 'private' : 'public';
+    if (now !== el.visibility.value) return true;
+    return el.visibility.value === 'private' && el.galleryPassword.value.length > 0;
   }
 
   function selectedGallery() {
@@ -608,7 +643,8 @@
     var hasGallery = !isNew || slugify(el.galleryName.value).length > 0;
     // Sem fotos novas ainda dá para publicar, se a mudança for só a capa
     // ou o botão de baixar tudo
-    var hasWork = state.items.length > 0 || (!isNew && (coverChanged() || downloadAllChanged()));
+    var hasWork = state.items.length > 0 ||
+      (!isNew && (coverChanged() || downloadAllChanged() || visibilityChanged()));
 
     el.btnPublish.disabled = state.busy || !hasGallery || !hasWork;
     el.btnPublish.textContent = (state.items.length === 0 && hasWork)
@@ -734,6 +770,7 @@
         cover: '',
         photos: []
       };
+      if (el.visibility.value === 'private') gallery.visibility = 'private';
     } else {
       gallery = state.data.galleries.filter(function (g) { return g.id === el.gallerySelect.value; })[0];
       if (!gallery) { alert('Gallery not found. Reload the page.'); return; }
@@ -743,6 +780,19 @@
     // Só grava a chave quando ligada, para o manifesto não encher de "false"
     if (el.downloadAll.checked) gallery.downloadAll = true;
     else delete gallery.downloadAll;
+
+    /* Público não tem senha: virar público apaga a que existia.
+       A senha em si nunca vai para o manifesto — só o PBKDF2 dela. */
+    var typed = el.galleryPassword.value;
+    var lockWork = Promise.resolve();
+
+    if (el.visibility.value === 'private') {
+      gallery.visibility = 'private';
+      if (typed) lockWork = Lock.make(typed).then(function (lock) { gallery.lock = lock; });
+    } else {
+      delete gallery.visibility;
+      delete gallery.lock;
+    }
 
     state.busy = true;
     el.btnPublish.disabled = true;
@@ -757,7 +807,7 @@
     var newPhotos = [];
     var blobs = [];   // {path, sha}
 
-    var chain = Promise.resolve();
+    var chain = lockWork;
 
     state.items.forEach(function (item, i) {
       chain = chain.then(function () {

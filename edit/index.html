@@ -65,6 +65,25 @@
     <label class="label" for="galleryDesc">Description</label>
     <input type="text" id="galleryDesc" class="input" maxlength="140">
 
+    <label class="label" for="visibilitySelect">Who can find it</label>
+    <select id="visibilitySelect" class="input">
+      <option value="public">Public — listed on the home page</option>
+      <option value="private">Private — not listed, opens only with the link</option>
+    </select>
+
+    <div id="privateFields" hidden>
+      <label class="label" for="galleryPassword">Password</label>
+      <input type="password" id="galleryPassword" class="input" autocomplete="new-password"
+             placeholder="Leave empty for no password" maxlength="80">
+      <p class="hint hint--tight" id="passwordHint"></p>
+      <label class="check" id="clearPasswordRow" hidden>
+        <input type="checkbox" id="clearPassword">
+        <span>Remove the password — anyone with the link opens it</span>
+      </label>
+      <p class="hint hint--tight hint--warn">The photo files stay reachable by direct URL —
+      this hides the gallery and locks the page, it does not encrypt the photos.</p>
+    </div>
+
     <label class="check">
       <input type="checkbox" id="downloadAllToggle">
       <span>Show a “Download all” button on this gallery</span>
@@ -177,6 +196,7 @@
 
 <script src="../assets/js/gh.js"></script>
 <script src="../assets/js/pagegen.js"></script>
+<script src="../assets/js/lock.js"></script>
 <script src="../assets/js/edit.js"></script>
 </body>
 </html>

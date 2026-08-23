@@ -72,6 +72,23 @@
       <input type="text" id="galleryDesc" class="input" placeholder="One line about the gallery" maxlength="140">
     </div>
 
+    <label class="label" for="visibilitySelect">Who can find it</label>
+    <select id="visibilitySelect" class="input">
+      <option value="public">Public — listed on the home page</option>
+      <option value="private">Private — not listed, opens only with the link</option>
+    </select>
+
+    <div id="privateFields" hidden>
+      <label class="label" for="galleryPassword">Password <span class="opt">(optional)</span></label>
+      <input type="password" id="galleryPassword" class="input" autocomplete="new-password"
+             placeholder="Leave empty for no password" maxlength="80">
+      <p class="hint hint--tight" id="passwordHint">Whoever opens the link has to type it.
+      Only the encrypted form goes to the repository — the password itself is never stored,
+      so there is no way to recover it, only replace it.</p>
+      <p class="hint hint--tight hint--warn">The photo files stay reachable by direct URL —
+      this hides the gallery and locks the page, it does not encrypt the photos.</p>
+    </div>
+
     <label class="check">
       <input type="checkbox" id="downloadAllToggle">
       <span>Show a “Download all” button on this gallery</span>
@@ -193,6 +210,7 @@
 
 <script src="../assets/js/gh.js"></script>
 <script src="../assets/js/pagegen.js"></script>
+<script src="../assets/js/lock.js"></script>
 <script src="../assets/js/upload.js"></script>
 </body>
 </html>

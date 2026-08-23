@@ -16,6 +16,9 @@
     gallerySelect: $('gallerySelect'), galleryName: $('galleryName'), galleryDesc: $('galleryDesc'),
     galleryDate: $('galleryDate'), defInstagram: $('defInstagram'),
     galleryFolder: $('galleryFolder'), downloadAll: $('downloadAllToggle'),
+    visibility: $('visibilitySelect'), privateFields: $('privateFields'),
+    galleryPassword: $('galleryPassword'), passwordHint: $('passwordHint'),
+    clearPassword: $('clearPassword'), clearPasswordRow: $('clearPasswordRow'),
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'),
     defLocation: $('defLocation'), btnApplyCredits: $('btnApplyCredits'),
     bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
@@ -120,6 +123,11 @@
     el.galleryDate.value = state.work.date || '';
     el.galleryFolder.textContent = 'images/' + state.work.id + '/';
     el.downloadAll.checked = !!state.work.downloadAll;
+    el.visibility.value = state.work.visibility === 'private' ? 'private' : 'public';
+    el.privateFields.hidden = el.visibility.value !== 'private';
+    el.galleryPassword.value = '';
+    el.clearPassword.checked = false;
+    updatePasswordUI();
 
     var first = state.work.photos[0] || {};
     el.defAuthor.value = first.author || '';
@@ -168,6 +176,35 @@
     else delete state.work.downloadAll;
     refreshChanges();
   });
+
+  // ---------- Pública / privada ----------
+
+  el.visibility.addEventListener('change', function () {
+    if (el.visibility.value === 'private') state.work.visibility = 'private';
+    else delete state.work.visibility;
+    el.privateFields.hidden = el.visibility.value !== 'private';
+    updatePasswordUI();
+    refreshChanges();
+  });
+
+  el.galleryPassword.addEventListener('input', refreshChanges);
+
+  el.clearPassword.addEventListener('change', function () {
+    updatePasswordUI();
+    refreshChanges();
+  });
+
+  function updatePasswordUI() {
+    var hasLock = !!(state.work.lock && state.work.lock.hash);
+    el.clearPasswordRow.hidden = !hasLock;
+    el.galleryPassword.disabled = el.clearPassword.checked;
+    el.galleryPassword.placeholder = hasLock
+      ? 'Leave empty to keep the current password'
+      : 'Leave empty for no password';
+    el.passwordHint.textContent = hasLock
+      ? 'This gallery has a password. Type a new one to replace it — the old one cannot be read back.'
+      : 'Whoever opens the link has to type it. Only the encrypted form goes to the repository.';
+  }
 
   // ---------- Créditos ----------
 
@@ -455,6 +492,16 @@
     if ((source.description || '') !== (state.work.description || '')) out.push('Gallery description');
     if ((source.date || '') !== (state.work.date || '')) out.push('Gallery date');
     if ((source.cover || '') !== (state.work.cover || '')) out.push('Gallery thumbnail');
+    var wasPrivate = source.visibility === 'private';
+    var nowPrivate = state.work.visibility === 'private';
+    if (wasPrivate !== nowPrivate) {
+      out.push(nowPrivate
+        ? 'Gallery becomes private — leaves the home page'
+        : 'Gallery becomes public — appears on the home page');
+    }
+    if (nowPrivate && el.clearPassword.checked && source.lock) out.push('Password removed');
+    else if (nowPrivate && el.galleryPassword.value) out.push(source.lock ? 'New password' : 'Password added');
+
     if (!!source.downloadAll !== !!state.work.downloadAll) {
       out.push(state.work.downloadAll ? '“Download all” button on' : '“Download all” button off');
     }
@@ -546,7 +593,15 @@
     var savedGallery = null;
     var renames = computeRenames();
 
-    GH.loadTree().then(function (tree) {
+    /* Galeria pública não guarda senha; privada só troca quando você digita uma */
+    var passWork = Promise.resolve();
+    if (state.work.visibility !== 'private' || el.clearPassword.checked) {
+      delete state.work.lock;
+    } else if (el.galleryPassword.value) {
+      passWork = Lock.make(el.galleryPassword.value).then(function (lock) { state.work.lock = lock; });
+    }
+
+    passWork.then(function () { return GH.loadTree(); }).then(function (tree) {
       // 1. Renomeações: reaproveitam o blob que já está no repositório
       progress(1, 4, 'Preparing changes…');
 

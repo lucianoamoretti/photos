@@ -39,6 +39,20 @@
 </header>
 
 <main>
+  <section class="lockgate" id="lockGate" hidden>
+    <svg class="lockgate-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+    </svg>
+    <h2>This gallery is private</h2>
+    <p class="lockgate-hint" id="lockHint">Enter the password to open it.</p>
+    <form class="lockgate-form" id="lockForm">
+      <input type="password" id="lockInput" autocomplete="current-password"
+             placeholder="Password" aria-label="Gallery password">
+      <button type="submit" class="dl-all" id="lockSubmit">Open</button>
+    </form>
+    <p class="lockgate-error" id="lockError" hidden></p>
+  </section>
+
   <div class="gallery" id="gallery" role="list" aria-label="Gallery photos"></div>
 
   <p class="empty-state" id="emptyState" hidden>Gallery not found, or it has no photos yet.</p>
@@ -78,6 +92,7 @@
 <script src="assets/js/track.js"></script>
 <script src="assets/js/protect.js"></script>
 <script src="assets/js/zip.js"></script>
+<script src="assets/js/lock.js"></script>
 <script>window.GALLERY_ID = "gremio-3x3-red-clover";</script>
 <script src="assets/js/gallery.js"></script>
 </body>

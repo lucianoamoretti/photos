@@ -60,8 +60,11 @@ def build(template, site, gallery):
     name = gallery.get("name") or gallery["id"]
     base_url = (site.get("url") or "").rstrip("/")
     page_url = f"{base_url}/g/{gallery['id']}/"
-    desc = description(gallery)
-    image = cover_image(gallery)
+    private = gallery.get("visibility") == "private"
+    # Privada: nada de capa no preview nem no índice do Google — quem tem o
+    # link vê o nome, e só isso sai daqui.
+    desc = "Private gallery." if private else description(gallery)
+    image = "" if private else cover_image(gallery)
     e = html.escape
 
     head = [
@@ -79,6 +82,9 @@ def build(template, site, gallery):
             f'<meta property="og:image" content="{e(base_url)}/{e(image)}">',
             f'<meta property="og:image:alt" content="{e(name)}">',
         ]
+    if private:
+        head.append('<meta name="robots" content="noindex, nofollow, noarchive">')
+
     head += [
         '<meta name="twitter:card" content="summary_large_image">',
         f'<meta name="twitter:title" content="{e(name)}">',

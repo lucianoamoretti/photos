@@ -66,8 +66,11 @@ window.PageGen = (function () {
   function build(template, site, gallery) {
     var siteName = site.title || 'Gallery';
     var title = (gallery.name || gallery.id) + ' — ' + siteName;
-    var desc = description(gallery);
-    var image = coverImage(gallery);
+    /* Privada: nada de capa no preview nem no índice do Google — quem tem o
+       link vê o nome, e só isso sai daqui. */
+    var isPrivate = gallery.visibility === 'private';
+    var desc = isPrivate ? 'Private gallery.' : description(gallery);
+    var image = isPrivate ? '' : coverImage(gallery);
 
     var head = [
       '<base href="../../">',
@@ -78,6 +81,7 @@ window.PageGen = (function () {
       '<meta property="og:title" content="' + esc(gallery.name || gallery.id) + '">',
       '<meta property="og:description" content="' + esc(desc) + '">',
       '<meta property="og:url" content="' + esc(url(site, gallery)) + '">',
+      (isPrivate ? '<meta name="robots" content="noindex, nofollow, noarchive">' : ''),
       '<meta name="twitter:card" content="summary_large_image">',
       '<meta name="twitter:title" content="' + esc(gallery.name || gallery.id) + '">',
       '<meta name="twitter:description" content="' + esc(desc) + '">'
@@ -94,6 +98,8 @@ window.PageGen = (function () {
 
     /* Depois do charset (que precisa vir nos primeiros bytes) e antes de
        qualquer URL relativa do <head>, por causa do <base>. */
+    head = head.filter(function (line) { return !!line; });
+
     var anchor = '<meta charset="utf-8">';
     html = html.indexOf(anchor) !== -1
       ? html.replace(anchor, anchor + '\n' + head.join('\n'))

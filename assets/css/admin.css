@@ -245,6 +245,13 @@ select.input {
 
 .hint--tight { margin: 7px 0 0; font-size: .74rem; }
 
+/* Aviso: o que a senha faz e o que ela não faz */
+.hint--warn {
+  color: #d9b98a;
+  border-left: 2px solid rgba(217, 185, 138, .45);
+  padding-left: 10px;
+}
+
 .hint a { color: #cfcfcf; }
 
 .hint code, .card code {

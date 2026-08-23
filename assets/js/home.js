@@ -20,7 +20,10 @@
     })
     .then(function (data) {
       var site = data.site || {};
-      var galleries = (data.galleries || []).filter(function (g) { return g && g.id; });
+      // Galeria privada só existe para quem tem o link: não entra na capa
+      var galleries = (data.galleries || []).filter(function (g) {
+        return g && g.id && g.visibility !== 'private';
+      });
 
       if (site.title) {
         els.title.textContent = site.title;
