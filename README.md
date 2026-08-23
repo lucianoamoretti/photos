@@ -92,9 +92,14 @@ derrubava o envio inteiro e não subia nada. Agora:
   diz quantas ficaram, para você reenviar só aquelas;
 - a página **pede para a tela não apagar** enquanto envia, e avisa se você tentar sair.
 
-O commit continua sendo um só, no fim. Se ele falhar por conflito (alguém publicou no meio),
-nada é gravado e a mensagem pede para recarregar — nesse caso as fotos precisam ser
-reenviadas.
+O commit continua sendo um só, no fim — mas a **árvore dele é montada em levas de 30
+arquivos**, cada leva partindo da anterior. Mandar as 272 entradas de um envio de 90 fotos
+numa chamada só faz o GitHub responder *"your request timed out… input was too large to
+process"* e perder o envio inteiro. Se ainda assim ele recusar uma leva, o código parte a
+leva no meio e insiste, até passar.
+
+Se o commit falhar por conflito (alguém publicou no meio), nada é gravado e a mensagem pede
+para recarregar — nesse caso as fotos precisam ser reenviadas.
 
 ### Sobre o token
 

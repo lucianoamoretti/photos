@@ -256,8 +256,56 @@ window.GH = (function () {
       });
   }
 
+  /* Quantos arquivos por chamada ao montar a árvore. Mandar as 272 entradas
+     de um envio de 90 fotos de uma vez faz o GitHub responder "your request
+     timed out... input was too large to process" — e a saída é a que a
+     própria mensagem sugere: montar a árvore em levas. */
+  var TREE_CHUNK = 30;
+
+  function treeEntry(e) {
+    return {
+      path: e.path,
+      mode: '100644',
+      type: 'blob',
+      sha: e.remove ? null : e.sha
+    };
+  }
+
+  /* Cada leva parte da árvore que a anterior devolveu, então no fim existe
+     uma árvore só com tudo dentro — e o commit continua sendo um só. */
+  function buildTree(baseSha, entries, onProgress) {
+    var current = baseSha;
+    var at = 0;
+    var chunk = TREE_CHUNK;
+
+    function step() {
+      if (at >= entries.length) return Promise.resolve(current);
+
+      var slice = entries.slice(at, at + chunk);
+
+      return api('/repos/' + state.repo + '/git/trees', {
+        method: 'POST',
+        body: { base_tree: current, tree: slice.map(treeEntry) }
+      }).then(function (tree) {
+        current = tree.sha;
+        at += slice.length;
+        if (onProgress) onProgress(at, entries.length);
+        return step();
+      }, function (err) {
+        // Ainda grande demais para este repositório: parte a leva no meio
+        if (/too large|timed out/i.test(err.message || '') && slice.length > 1) {
+          chunk = Math.floor(slice.length / 2);
+          return step();
+        }
+        throw err;
+      });
+    }
+
+    return step();
+  }
+
   /* Um commit só com tudo: entries = [{path, sha}] ou [{path, remove:true}] */
-  function commit(message, entries) {
+  function commit(message, entries, onProgress) {
     var headSha;
 
     return api('/repos/' + state.repo + '/git/ref/heads/' + state.branch)
@@ -266,25 +314,12 @@ window.GH = (function () {
         return api('/repos/' + state.repo + '/git/commits/' + headSha);
       })
       .then(function (parent) {
-        return api('/repos/' + state.repo + '/git/trees', {
-          method: 'POST',
-          body: {
-            base_tree: parent.tree.sha,
-            tree: entries.map(function (e) {
-              return {
-                path: e.path,
-                mode: '100644',
-                type: 'blob',
-                sha: e.remove ? null : e.sha
-              };
-            })
-          }
-        });
+        return buildTree(parent.tree.sha, entries, onProgress);
       })
-      .then(function (tree) {
+      .then(function (treeSha) {
         return api('/repos/' + state.repo + '/git/commits', {
           method: 'POST',
-          body: { message: message, tree: tree.sha, parents: [headSha] }
+          body: { message: message, tree: treeSha, parents: [headSha] }
         });
       })
       .then(function (newCommit) {

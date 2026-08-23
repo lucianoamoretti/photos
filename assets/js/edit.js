@@ -652,7 +652,10 @@
       return galleryPageEntry(savedGallery, entries);
     }).then(function () {
       progress(3, 4, 'Creating commit…');
-      return GH.commit('Edit gallery "' + state.work.name + '"', entries);
+      return GH.commit('Edit gallery "' + state.work.name + '"', entries, function (done, all) {
+        // A árvore vai em levas; sem isto a barra parecia travada no fim
+        progress(3, 4, 'Creating commit… ' + done + '/' + all + ' files');
+      });
     }).then(function () {
       state.busy = false;
       loadGallery(state.work.id);          // recarrega a partir do manifesto já atualizado

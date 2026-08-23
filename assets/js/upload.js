@@ -950,7 +950,11 @@
       progress(++step, total, 'Creating commit\u2026');
       return GH.commit(newPhotos.length
         ? 'Add ' + newPhotos.length + ' photo(s) to "' + gallery.name + '"'
-        : 'Update the thumbnail of "' + gallery.name + '"', blobs);
+        : 'Update the thumbnail of "' + gallery.name + '"', blobs,
+        function (done, all) {
+          // A árvore vai em levas; sem isto a barra parecia travada no fim
+          progress(step, total, 'Creating commit\u2026 ' + done + '/' + all + ' files');
+        });
     }).then(function () {
       progress(total, total, 'Done!');
       log('✓ Commit published.');
