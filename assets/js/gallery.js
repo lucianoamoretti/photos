@@ -21,7 +21,11 @@
     lbDl:      document.getElementById('lbDownload'),
     lbClose:   document.getElementById('lbClose'),
     lbPrev:    document.getElementById('lbPrev'),
-    lbNext:    document.getElementById('lbNext')
+    lbNext:    document.getElementById('lbNext'),
+    actions:   document.getElementById('galleryActions'),
+    dlAll:     document.getElementById('btnDownloadAll'),
+    dlAllLabel:document.getElementById('dlAllLabel'),
+    dlAllNote: document.getElementById('dlAllNote')
   };
 
   var photos = [];
@@ -69,6 +73,7 @@
       Track.gallery(galleryId);
 
       render();
+      setupDownloadAll(gallery);
     })
     .catch(function (err) {
       console.error(err);
@@ -137,6 +142,49 @@
     });
 
     els.gallery.appendChild(frag);
+  }
+
+  // ---------- Baixar a galeria inteira ----------
+
+  /* Só aparece nas galerias marcadas com "downloadAll" no manifesto.
+     O zip é montado aqui no navegador com os arquivos originais —
+     os mesmos que o botão de cada foto entrega. */
+  function setupDownloadAll(gallery) {
+    if (!gallery.downloadAll || !photos.length || !window.Zip) return;
+
+    els.actions.hidden = false;
+    els.dlAllLabel.textContent = 'Download all ' + photos.length + ' photos';
+
+    els.dlAll.addEventListener('click', function () {
+      if (els.dlAll.disabled) return;
+      els.dlAll.disabled = true;
+      els.dlAllNote.hidden = false;
+      els.dlAllNote.textContent = 'Preparing…';
+
+      var entries = photos.map(function (photo) {
+        return { name: fileName(photo), url: photo.file };
+      });
+
+      Zip.build(entries, function (done, total) {
+        els.dlAllNote.textContent = done < total
+          ? 'Preparing ' + done + ' of ' + total + '…'
+          : 'Wrapping up…';
+      }).then(function (blob) {
+        Zip.save(blob, (galleryId || 'gallery') + '.zip');
+        els.dlAllNote.textContent = 'Saved · ' + humanSize(blob.size);
+        Track.download(galleryId);      // conta como um download da galeria, não de cada foto
+      }).catch(function (err) {
+        console.error(err);
+        els.dlAllNote.textContent = 'Could not build the zip — try again, or download photo by photo.';
+      }).then(function () {
+        els.dlAll.disabled = false;
+      });
+    });
+  }
+
+  function humanSize(bytes) {
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(bytes >= 10485760 ? 0 : 1) + ' MB';
+    return Math.max(1, Math.round(bytes / 1024)) + ' KB';
   }
 
   // ---------- Helpers de metadados ----------

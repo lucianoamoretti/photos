@@ -36,6 +36,7 @@
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'), defLocation: $('defLocation'),
     defInstagram: $('defInstagram'), galleryDate: $('galleryDate'), galleryDateHint: $('galleryDateHint'),
     coverPicker: $('coverPicker'), coverStrip: $('coverStrip'),
+    downloadAll: $('downloadAllToggle'),
     dropzone: $('dropzone'), fileInput: $('fileInput'), fileList: $('fileList'), filesPill: $('filesPill'),
     bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
     bulkPreview: $('bulkPreview'), starHint: $('starHint'),
@@ -163,6 +164,9 @@
     sel.value = prev;
     if (!sel.value) sel.value = '__new__';
     el.newFields.hidden = sel.value !== '__new__';
+
+    var g = selectedGallery();
+    el.downloadAll.checked = g ? !!g.downloadAll : false;
   }
 
   // ---------- Galeria ----------
@@ -175,11 +179,21 @@
     // Numeração em lote continua de onde a galeria parou
     var g = selectedGallery();
     el.bulkStart.value = g ? ((g.photos || []).length + 1) : 1;
+    el.downloadAll.checked = g ? !!g.downloadAll : false;
 
     renderCoverStrip();
     updateBulkPreview();
     refreshPublishState();
   });
+
+  /* Ligar/desligar o botão de baixar tudo já é uma mudança publicável,
+     mesmo sem foto nova na fila */
+  el.downloadAll.addEventListener('change', refreshPublishState);
+
+  function downloadAllChanged() {
+    var g = selectedGallery();
+    return !!g && !!g.downloadAll !== el.downloadAll.checked;
+  }
 
   function selectedGallery() {
     if (el.gallerySelect.value === '__new__') return null;
@@ -592,12 +606,13 @@
   function refreshPublishState() {
     var isNew = el.gallerySelect.value === '__new__';
     var hasGallery = !isNew || slugify(el.galleryName.value).length > 0;
-    // Sem fotos novas ainda dá para publicar, se a única mudança for a capa
-    var hasWork = state.items.length > 0 || (!isNew && coverChanged());
+    // Sem fotos novas ainda dá para publicar, se a mudança for só a capa
+    // ou o botão de baixar tudo
+    var hasWork = state.items.length > 0 || (!isNew && (coverChanged() || downloadAllChanged()));
 
     el.btnPublish.disabled = state.busy || !hasGallery || !hasWork;
     el.btnPublish.textContent = (state.items.length === 0 && hasWork)
-      ? 'Save thumbnail'
+      ? 'Save gallery settings'
       : 'Publish photos';
   }
 
@@ -724,6 +739,10 @@
       if (!gallery) { alert('Gallery not found. Reload the page.'); return; }
       if (!gallery.photos) gallery.photos = [];
     }
+
+    // Só grava a chave quando ligada, para o manifesto não encher de "false"
+    if (el.downloadAll.checked) gallery.downloadAll = true;
+    else delete gallery.downloadAll;
 
     state.busy = true;
     el.btnPublish.disabled = true;

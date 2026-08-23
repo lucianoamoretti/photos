@@ -15,7 +15,7 @@
     cardPhotos: $('cardPhotos'), cardSave: $('cardSave'),
     gallerySelect: $('gallerySelect'), galleryName: $('galleryName'), galleryDesc: $('galleryDesc'),
     galleryDate: $('galleryDate'), defInstagram: $('defInstagram'),
-    galleryFolder: $('galleryFolder'),
+    galleryFolder: $('galleryFolder'), downloadAll: $('downloadAllToggle'),
     defAuthor: $('defAuthor'), defYear: $('defYear'), defLicense: $('defLicense'),
     defLocation: $('defLocation'), btnApplyCredits: $('btnApplyCredits'),
     bulkTitle: $('bulkTitle'), bulkStart: $('bulkStart'), btnBulk: $('btnBulk'),
@@ -119,6 +119,7 @@
     el.galleryDesc.value = state.work.description || '';
     el.galleryDate.value = state.work.date || '';
     el.galleryFolder.textContent = 'images/' + state.work.id + '/';
+    el.downloadAll.checked = !!state.work.downloadAll;
 
     var first = state.work.photos[0] || {};
     el.defAuthor.value = first.author || '';
@@ -158,6 +159,13 @@
 
   el.galleryDate.addEventListener('input', function () {
     state.work.date = el.galleryDate.value;
+    refreshChanges();
+  });
+
+  el.downloadAll.addEventListener('change', function () {
+    // Só grava a chave quando ligada, para o manifesto não encher de "false"
+    if (el.downloadAll.checked) state.work.downloadAll = true;
+    else delete state.work.downloadAll;
     refreshChanges();
   });
 
@@ -447,6 +455,9 @@
     if ((source.description || '') !== (state.work.description || '')) out.push('Gallery description');
     if ((source.date || '') !== (state.work.date || '')) out.push('Gallery date');
     if ((source.cover || '') !== (state.work.cover || '')) out.push('Gallery thumbnail');
+    if (!!source.downloadAll !== !!state.work.downloadAll) {
+      out.push(state.work.downloadAll ? '“Download all” button on' : '“Download all” button off');
+    }
 
     var deleted = state.work.photos.filter(function (p) { return p.deleted; }).length;
     if (deleted) out.push(deleted + ' photo(s) will be deleted — file and light versions');

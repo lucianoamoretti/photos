@@ -84,6 +84,28 @@ A página é pública, mas o token não: ele fica só no navegador de quem o col
 enviado para `api.github.com`. Ninguém consegue publicar sem o próprio token.
 Nunca comite o token no repositório.
 
+## Baixar a galeria inteira
+
+Cada galeria pode mostrar um botão **"Download all"** que entrega todas as fotos em um
+zip. Fica desligado por padrão: ligue por galeria, no passo 2 da página de upload ou no
+editor. No manifesto isso é só `"downloadAll": true` na galeria.
+
+O zip é montado no próprio navegador de quem baixa — não existe servidor para isso em
+site estático. As fotos entram sem recompressão (já são JPEG), então o zip fica do
+tamanho da soma dos originais e sai rápido: as 54 fotos da galeria do Grêmio, 289 MB,
+levaram poucos segundos. O código está em `assets/js/zip.js`, sem dependência, e o
+progresso aparece ao lado do botão.
+
+Duas coisas a saber antes de ligar:
+
+- **O que vai no zip é o arquivo original**, o mesmo do botão de cada foto — não a
+  versão leve. Uma galeria de 300 MB é um download de 300 MB.
+- O zip é montado na memória do aparelho. Em celular antigo, uma galeria muito grande
+  pode falhar; nesse caso o visitante ainda pode baixar foto a foto.
+
+Nas estatísticas isso conta como **um download da galeria**, não como um download de
+cada foto — os números por foto continuam refletindo quem baixou aquela foto.
+
 ## Editando galerias
 
 Em `/edit/`, com o mesmo token, dá para:
@@ -94,7 +116,8 @@ Em `/edit/`, com o mesmo token, dá para:
   renomear também os arquivos (o download sai com o nome novo);
 - reordenar: por data, por nome, invertendo, com as setas ↑ ↓ ou arrastando;
 - trocar autor, Instagram, ano, local e licença de uma foto ou de todas;
-- apagar fotos — some o original, a miniatura e a versão de tela cheia.
+- apagar fotos — some o original, a miniatura e a versão de tela cheia;
+- ligar ou desligar o botão de baixar a galeria inteira.
 
 Tudo o que você mexer fica listado em "Salvar" antes de confirmar, e vai em **um único commit**.
 Renomear não reenvia bytes: o arquivo é movido reaproveitando o blob que já está no repositório.

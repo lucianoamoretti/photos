@@ -430,6 +430,58 @@ body.no-scroll { overflow: hidden; }
   text-transform: uppercase;
 }
 
+/* ---------- Baixar a galeria inteira ---------- */
+
+.gallery-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0 0;
+}
+
+.dl-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 20px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: .78rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .2s, color .2s, border-color .2s;
+}
+
+.dl-all:hover:not(:disabled),
+.dl-all:focus-visible {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+}
+
+.dl-all:disabled { opacity: .55; cursor: progress; }
+
+.dl-all svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dl-all-note {
+  color: var(--muted);
+  font-size: .76rem;
+  letter-spacing: .06em;
+}
+
 .lb-license {
   margin: 3px 0 0;
   font-size: .74rem;
