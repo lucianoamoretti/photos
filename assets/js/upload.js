@@ -23,6 +23,37 @@
   var extOf = GH.extOf;
   var putBlob = GH.putBlob;
 
+  /* Envio longo no celular: a tela apagando suspende a aba e derruba as
+     requisições no meio. Enquanto der, pedimos para a tela ficar acesa. */
+  var wakeLock = null;
+
+  function keepAwake() {
+    if (!navigator.wakeLock || !navigator.wakeLock.request) return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      wakeLock = lock;
+    }).catch(function () { /* o navegador pode recusar; segue sem */ });
+  }
+
+  function letSleep() {
+    if (wakeLock && wakeLock.release) wakeLock.release();
+    wakeLock = null;
+  }
+
+  /* Se a tela apagou mesmo assim, o pedido morre junto — retoma ao voltar */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && state.busy && !wakeLock) keepAwake();
+  });
+
+  window.addEventListener('beforeunload', function (e) {
+    if (!state.busy) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  /* Quantas fotos sobem ao mesmo tempo. Poucas demoram; muitas fazem o
+     GitHub pedir para desacelerar (e o celular sofrer com o redimensionamento). */
+  var AT_A_TIME = 3;
+
   var $ = function (id) { return document.getElementById(id); };
 
   var el = {
@@ -795,6 +826,7 @@
     }
 
     state.busy = true;
+    keepAwake();
     el.btnPublish.disabled = true;
     el.log.textContent = '';
     el.doneBox.hidden = true;
@@ -806,58 +838,90 @@
 
     var newPhotos = [];
     var blobs = [];   // {path, sha}
+    var uploaded = new Array(state.items.length);   // por índice, para manter a ordem
+    var failed = [];
+    var finished = 0;
 
-    var chain = lockWork;
-
-    state.items.forEach(function (item, i) {
-      chain = chain.then(function () {
-        progress(step, total, 'Preparing ' + (i + 1) + '/' + state.items.length + ': ' + item.file.name);
-        return processImage(item.file);
-      }).then(function (out) {
-        var base = slugify(item.title) || slugify(item.file.name.replace(/\.[^.]+$/, '')) || 'photo';
-        var filename = base + '.' + out.main.ext;
-        var n = 2;
-        while (used[filename.toLowerCase()]) { filename = base + '-' + n + '.' + out.main.ext; n++; }
-        used[filename.toLowerCase()] = true;
-
-        var dir = 'images/' + gallery.id + '/';
-        var stem = filename.replace(/\.[^.]+$/, '');
-        var path = dir + filename;
-        item.publishedPath = path;
-
-        var photo = {
-          file: path,
-          title: item.title.trim() || prettyTitle(item.file.name),
-          author: item.author.trim() || defAuthor,
-          year: el.defYear.value.trim(),
-          license: el.defLicense.value,
-          location: el.defLocation.value.trim(),
-          instagram: GH.instagramHandle(el.defInstagram.value),
-          alt: '',
-          taken: item.date ? isoLocal(item.date) : ''
+    /* Uma foto por vez deixava 90 fotos virarem 270 requisições em fila; se
+       uma falhasse no meio, o envio inteiro caía. Agora vão algumas em
+       paralelo, cada requisição repete sozinha quando o erro é passageiro,
+       e a foto que não subir é anotada em vez de derrubar as outras. */
+    var tasks = state.items.map(function (item, i) {
+      return function () {
+        var retryNote = function (attempt, seconds, why) {
+          log('… ' + item.file.name + ': ' + (why === 'network' ? 'sem resposta' : why) +
+              ' — tentando de novo em ' + seconds + 's (tentativa ' + attempt + ')');
         };
 
-        log('↑ ' + path + ' (' + humanSize(out.main.blob.size) + ')');
+        return processImage(item.file).then(function (out) {
+          var base = slugify(item.title) || slugify(item.file.name.replace(/\.[^.]+$/, '')) || 'photo';
+          var filename = base + '.' + out.main.ext;
+          var n = 2;
+          while (used[filename.toLowerCase()]) { filename = base + '-' + n + '.' + out.main.ext; n++; }
+          used[filename.toLowerCase()] = true;
 
-        return putBlob(out.main.blob).then(function (sha) {
-          blobs.push({ path: path, sha: sha });
-          if (!out.thumb) return null;
-          return putBlob(out.thumb).then(function (s) {
-            photo.thumb = dir + 'thumbs/' + stem + '.jpg';
-            blobs.push({ path: photo.thumb, sha: s });
+          var dir = 'images/' + gallery.id + '/';
+          var stem = filename.replace(/\.[^.]+$/, '');
+          var path = dir + filename;
+          item.publishedPath = path;
+
+          var photo = {
+            file: path,
+            title: item.title.trim() || prettyTitle(item.file.name),
+            author: item.author.trim() || defAuthor,
+            year: el.defYear.value.trim(),
+            license: el.defLicense.value,
+            location: el.defLocation.value.trim(),
+            instagram: GH.instagramHandle(el.defInstagram.value),
+            alt: '',
+            taken: item.date ? isoLocal(item.date) : ''
+          };
+
+          log('↑ ' + path + ' (' + humanSize(out.main.blob.size) + ')');
+
+          /* Os três arquivos da foto só entram no commit se os três subirem */
+          var mine = [];
+
+          return putBlob(out.main.blob, { onRetry: retryNote }).then(function (sha) {
+            mine.push({ path: path, sha: sha });
+            if (!out.thumb) return null;
+            return putBlob(out.thumb, { onRetry: retryNote }).then(function (s) {
+              photo.thumb = dir + 'thumbs/' + stem + '.jpg';
+              mine.push({ path: photo.thumb, sha: s });
+            });
+          }).then(function () {
+            if (!out.view) return null;
+            return putBlob(out.view, { onRetry: retryNote }).then(function (s) {
+              photo.view = dir + 'view/' + stem + '.jpg';
+              mine.push({ path: photo.view, sha: s });
+            });
+          }).then(function () {
+            blobs = blobs.concat(mine);
+            uploaded[i] = photo;
           });
+        }).catch(function (err) {
+          failed.push(item.file.name);
+          log('✗ ' + item.file.name + ' ficou de fora: ' + err.message);
         }).then(function () {
-          if (!out.view) return null;
-          return putBlob(out.view).then(function (s) {
-            photo.view = dir + 'view/' + stem + '.jpg';
-            blobs.push({ path: photo.view, sha: s });
-          });
-        }).then(function () {
-          newPhotos.push(photo);
-          step++;
-          progress(step, total, 'Uploaded ' + step + '/' + state.items.length);
+          finished++;
+          step = finished;
+          progress(step, total, 'Uploaded ' + finished + '/' + state.items.length +
+            (failed.length ? '  (' + failed.length + ' failed)' : ''));
         });
-      });
+      };
+    });
+
+    var chain = lockWork.then(function () {
+      return GH.pool(tasks, AT_A_TIME);
+    }).then(function () {
+      newPhotos = uploaded.filter(function (p) { return !!p; });
+
+      if (state.items.length && !newPhotos.length) {
+        throw new Error('Nenhuma das fotos subiu — confira a conexão e tente de novo.');
+      }
+      if (failed.length) {
+        log('— ' + failed.length + ' foto(s) não subiram; o resto vai no commit.');
+      }
     });
 
     chain.then(function () {
@@ -891,13 +955,15 @@
       progress(total, total, 'Done!');
       log('✓ Commit published.');
       state.busy = false;
+      letSleep();
       state.items = [];
       state.cover = null;
       renderFiles();
       el.doneBox.hidden = false;
       el.doneText.textContent = (newPhotos.length
         ? newPhotos.length + ' photo(s) uploaded to "' + gallery.name + '"'
-        : 'Thumbnail of "' + gallery.name + '" updated') +
+        : 'Gallery "' + gallery.name + '" updated') +
+        (failed.length ? ' — ' + failed.length + ' could not be sent, pick those again.' : '') +
         '. The site updates in about a minute.';
       el.doneLink.href = '../g/' + gallery.id + '/';
       fillGallerySelect();
@@ -913,6 +979,7 @@
       progress(0, 1, 'Failed — nothing was published.');
       // Desfaz as alterações locais no manifesto para não duplicar numa nova tentativa
       state.busy = false;
+      letSleep();
       loadManifest().then(function () {
         fillGallerySelect();
         renderCoverStrip();

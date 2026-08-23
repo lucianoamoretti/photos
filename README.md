@@ -78,6 +78,24 @@ Por padrão as fotos são redimensionadas no próprio navegador para 2000 px no 
 e convertidas em JPEG a 85% de qualidade, o que corta bastante o peso no 4G. Dá para
 desmarcar e enviar o arquivo original.
 
+### Envio grande: o que acontece quando algo falha
+
+Cada foto vira três arquivos no repositório (original, miniatura e a versão de tela cheia),
+ou seja, 90 fotos são 270 requisições. Antes elas iam uma de cada vez e qualquer tropeço no
+meio — rede oscilando, o GitHub pedindo para desacelerar, a tela do celular apagando —
+derrubava o envio inteiro e não subia nada. Agora:
+
+- vão **três fotos por vez**, o que encurta bastante o tempo total;
+- cada requisição que falha por motivo passageiro (erro 5xx, queda de rede, limite de
+  requisições) **repete sozinha**, esperando o tempo que o GitHub pedir, até quatro vezes;
+- a foto que não subir mesmo assim **fica de fora e o resto é publicado** — no fim a página
+  diz quantas ficaram, para você reenviar só aquelas;
+- a página **pede para a tela não apagar** enquanto envia, e avisa se você tentar sair.
+
+O commit continua sendo um só, no fim. Se ele falhar por conflito (alguém publicou no meio),
+nada é gravado e a mensagem pede para recarregar — nesse caso as fotos precisam ser
+reenviadas.
+
 ### Sobre o token
 
 A página é pública, mas o token não: ele fica só no navegador de quem o colou e só é
