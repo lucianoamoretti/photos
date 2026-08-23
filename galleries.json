@@ -1910,87 +1910,8 @@
       "date": "2026-08-26",
       "description": "",
       "createdAt": "2026-08-23",
-      "cover": "images/pri-e-tuto/pri-e-tuto-1.jpg",
-      "photos": [
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-1.jpg",
-          "title": "Pri e Tuto 1",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:44:00",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-1.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-1.jpg"
-        },
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-2.jpg",
-          "title": "Pri e Tuto 2",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:44:12",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-2.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-2.jpg"
-        },
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-3.jpg",
-          "title": "Pri e Tuto 3",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:44:22",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-3.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-3.jpg"
-        },
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-4.jpg",
-          "title": "Pri e Tuto 4",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:44:23",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-4.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-4.jpg"
-        },
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-5.jpg",
-          "title": "Pri e Tuto 5",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:44:25",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-5.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-5.jpg"
-        },
-        {
-          "file": "images/pri-e-tuto/pri-e-tuto-6.jpg",
-          "title": "Pri e Tuto 6",
-          "author": "Luciano Amoretti",
-          "year": "2026",
-          "license": "All rights reserved",
-          "location": "",
-          "instagram": "lucianoamoretti",
-          "alt": "",
-          "taken": "2026-08-23T15:45:28",
-          "thumb": "images/pri-e-tuto/thumbs/pri-e-tuto-6.jpg",
-          "view": "images/pri-e-tuto/view/pri-e-tuto-6.jpg"
-        }
-      ],
+      "cover": "",
+      "photos": [],
       "downloadAll": true
     }
   ]
