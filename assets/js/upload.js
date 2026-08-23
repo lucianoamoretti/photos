@@ -713,6 +713,11 @@
      main  — o que o botão "Baixar" entrega (original, ou reduzido se a opção estiver marcada)
      view  — 1800 px, o que aparece em tela cheia
      thumb — 700 px, o que aparece no grid */
+  /* O campo de tamanho só faz sentido com a caixa marcada */
+  el.resizeToggle.addEventListener('change', function () {
+    el.maxSize.disabled = !el.resizeToggle.checked;
+  });
+
   function processImage(file) {
     var reduce = el.resizeToggle.checked;
     var max = Math.max(600, Math.min(6000, parseInt(el.maxSize.value, 10) || 2000));

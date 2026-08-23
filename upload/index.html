@@ -171,10 +171,14 @@
     </div>
 
     <label class="check">
-      <input type="checkbox" id="resizeToggle" checked>
-      <span>Shrink the download file to at most <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100" class="input input--mini"> px
-      (uncheck to keep the original full-size photo)</span>
+      <input type="checkbox" id="resizeToggle">
+      <span>Shrink the photo before uploading, to at most
+      <input type="number" id="maxSize" value="2000" min="600" max="6000" step="100"
+             class="input input--mini" disabled> px</span>
     </label>
+    <p class="hint hint--tight">Leave it off and the file goes up exactly as it came out of the
+    camera — same pixels, same EXIF — and that is what the download button gives. Tick it only
+    to save space or to get through a slow connection; it re-encodes as JPEG at 85%.</p>
     <p class="hint hint--tight">Either way, light versions are generated — 700 px for the grid
     and 1800 px for full screen — so the gallery loads fast on a phone.</p>
 

@@ -74,9 +74,15 @@ A forma normal de adicionar fotos, e funciona do celular.
 5. Escolha as fotos, ajuste título/autor de cada uma se quiser, e clique em **Publicar**.
 
 O envio vira **um único commit** (fotos + manifesto atualizado) via API do Git do GitHub.
-Por padrão as fotos são redimensionadas no próprio navegador para 2000 px no lado maior
-e convertidas em JPEG a 85% de qualidade, o que corta bastante o peso no 4G. Dá para
-desmarcar e enviar o arquivo original.
+
+**A foto sobe como veio da câmera** — mesmos pixels, mesmo EXIF — e é isso que o botão de
+download entrega. Quem quiser economizar espaço ou passar por uma conexão ruim pode marcar
+*"Shrink the photo before uploading"* e escolher o lado maior; aí ela é reduzida no próprio
+navegador e recomprimida em JPEG a 85%.
+
+Um original de câmera costuma ter 5 MB ou mais, então uma galeria de 90 fotos passa dos
+400 MB no repositório. O GitHub aguenta, mas repositório de fotos cresce rápido: vale ficar
+de olho se isso virar rotina.
 
 ### Envio grande: o que acontece quando algo falha
 
