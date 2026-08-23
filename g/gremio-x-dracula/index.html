@@ -28,6 +28,14 @@
   <h1 class="site-title" id="galleryName">Gallery</h1>
   <p class="gallery-date" id="galleryDate"></p>
   <p class="site-subtitle" id="galleryDesc"></p>
+
+  <p class="gallery-actions" id="galleryActions" hidden>
+    <button class="dl-all" id="btnDownloadAll" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>
+      <span id="dlAllLabel">Download all</span>
+    </button>
+    <span class="dl-all-note" id="dlAllNote" hidden></span>
+  </p>
 </header>
 
 <main>
@@ -69,6 +77,7 @@
 
 <script src="assets/js/track.js"></script>
 <script src="assets/js/protect.js"></script>
+<script src="assets/js/zip.js"></script>
 <script>window.GALLERY_ID = "gremio-x-dracula";</script>
 <script src="assets/js/gallery.js"></script>
 </body>
