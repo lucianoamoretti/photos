@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="../../">
+<link rel="canonical" href="https://lucianoamoretti.github.io/photos/g/gremio-2x1-palmeiras/">
+<meta name="description" content="29 August 2026 · 110 photos · by Paola de Oliveira">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Luciano Amoretti Photography">
+<meta property="og:title" content="Grêmio 2x1 Palmeiras">
+<meta property="og:description" content="29 August 2026 · 110 photos · by Paola de Oliveira">
+<meta property="og:url" content="https://lucianoamoretti.github.io/photos/g/gremio-2x1-palmeiras/">
+<meta property="og:image" content="https://lucianoamoretti.github.io/photos/images/gremio-2x1-palmeiras/thumbs/gremio2x1palmeiras-048.jpg">
+<meta property="og:image:alt" content="Grêmio 2x1 Palmeiras">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Grêmio 2x1 Palmeiras">
+<meta name="twitter:description" content="29 August 2026 · 110 photos · by Paola de Oliveira">
+<meta name="twitter:image" content="https://lucianoamoretti.github.io/photos/images/gremio-2x1-palmeiras/thumbs/gremio2x1palmeiras-048.jpg">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>Grêmio 2x1 Palmeiras — Luciano Amoretti Photography</title>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="back-link" href="index.html">&#8249; All galleries</a>
+  <h1 class="site-title" id="galleryName">Gallery</h1>
+  <p class="gallery-date" id="galleryDate"></p>
+  <p class="site-subtitle" id="galleryDesc"></p>
+
+  <p class="gallery-actions" id="galleryActions" hidden>
+    <button class="dl-all" id="btnDownloadAll" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>
+      <span id="dlAllLabel">Download all</span>
+    </button>
+    <span class="dl-all-note" id="dlAllNote" hidden></span>
+  </p>
+</header>
+
+<main>
+  <section class="lockgate" id="lockGate" hidden>
+    <svg class="lockgate-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+    </svg>
+    <h2>This gallery is private</h2>
+    <p class="lockgate-hint" id="lockHint">Enter the password to open it.</p>
+    <form class="lockgate-form" id="lockForm">
+      <input type="password" id="lockInput" autocomplete="current-password"
+             placeholder="Password" aria-label="Gallery password">
+      <button type="submit" class="dl-all" id="lockSubmit">Open</button>
+    </form>
+    <p class="lockgate-error" id="lockError" hidden></p>
+  </section>
+
+  <div class="gallery" id="gallery" role="list" aria-label="Gallery photos"></div>
+
+  <p class="empty-state" id="emptyState" hidden>Gallery not found, or it has no photos yet.</p>
+</main>
+
+<footer class="site-footer">
+  <p id="footerCopy"></p>
+  <p class="footer-note">These images are protected by copyright. Downloads are allowed
+  under the licence shown on each photo.</p>
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo viewer" hidden>
+  <button class="lb-btn lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-btn lb-prev" id="lbPrev" aria-label="Previous photo">&#8249;</button>
+  <button class="lb-btn lb-next" id="lbNext" aria-label="Next photo">&#8250;</button>
+
+  <figure class="lb-figure">
+    <div class="lb-stage">
+      <img id="lbImage" alt="">
+      <div class="lb-spinner" id="lbSpinner"></div>
+    </div>
+    <figcaption class="lb-info">
+      <div class="lb-meta">
+        <h2 class="lb-title" id="lbTitle"></h2>
+        <p class="lb-credit" id="lbCredit"></p>
+        <p class="lb-license" id="lbLicense"></p>
+      </div>
+      <a class="lb-download" id="lbDownload" href="#" download>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></svg>
+        <span>Download</span>
+      </a>
+    </figcaption>
+  </figure>
+</div>
+
+<script src="assets/js/track.js"></script>
+<script src="assets/js/protect.js"></script>
+<script src="assets/js/zip.js"></script>
+<script src="assets/js/lock.js"></script>
+<script>window.GALLERY_ID = "gremio-2x1-palmeiras";</script>
+<script src="assets/js/gallery.js"></script>
+</body>
+</html>
